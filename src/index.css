@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    @apply bg-black text-cream font-sans;
+  }
+  * {
+    @apply box-border;
+  }
+}
+
+@layer components {
+  /* Reveal animation — toggled via IntersectionObserver */
+  .reveal {
+    @apply opacity-0 translate-y-6 transition-all duration-[600ms] ease-out;
+  }
+  .reveal.visible {
+    @apply opacity-100 translate-y-0;
+  }
+
+  /* Section labels */
+  .eyebrow {
+    @apply text-lime text-xs font-semibold tracking-widest uppercase mb-4;
+  }
+
+  /* Input / select / textarea base */
+  .field-input {
+    @apply w-full bg-white/[0.04] border border-white/10 rounded-lg px-4 py-3
+           text-cream text-sm placeholder-white/20
+           focus:outline-none focus:border-lime/40 transition-colors;
+  }
+
+  /* Pill badge */
+  .pill {
+    @apply inline-flex items-center gap-2 bg-lime/10 border border-lime/25
+           text-lime text-xs font-semibold tracking-widest uppercase
+           px-4 py-1.5 rounded-full;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    @apply opacity-100 translate-y-0 transition-none;
+  }
+}
