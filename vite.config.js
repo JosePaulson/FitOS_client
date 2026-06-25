@@ -8,7 +8,7 @@ export default defineConfig({
     proxy: {
       // All /api requests forwarded to Express in dev — no CORS needed
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://fitos-server.onrender.com',
         changeOrigin: true,
       },
     },
