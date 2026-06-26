@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { planApi } from '../../api/index'
+import Select from '../../components/ui/Select'
 
 export default function Plans() {
-  const [plans,   setPlans]   = useState([])
+  const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [editing,  setEditing]  = useState(null)
+  const [editing, setEditing] = useState(null)
   const [formError, setFormError] = useState('')
   const [formLoading, setFormLoading] = useState(false)
 
@@ -57,19 +58,19 @@ export default function Plans() {
       </div>
 
       {loading ? (
-        <div className="grid sm:grid-cols-2 gap-4">
-          {[1,2,3].map((i) => <div key={i} className="h-36 bg-card border border-white/[0.08] rounded-xl animate-pulse" />)}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {[1, 2, 3].map((i) => <div key={i} className="h-36 bg-card border border-white/[0.08] rounded-xl animate-pulse" />)}
         </div>
       ) : plans.length === 0 ? (
-        <div className="text-center py-20 text-muted text-sm">
+        <div className="py-20 text-sm text-center text-muted">
           No plans yet. Create your first membership plan to start enrolling members.
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           {plans.map((plan) => (
             <div key={plan._id} className="bg-card border border-white/[0.08] rounded-xl p-6">
               <div className="flex items-start justify-between mb-3">
-                <h3 className="font-bold text-lg">{plan.name}</h3>
+                <h3 className="text-lg font-bold">{plan.name}</h3>
                 <div className="flex gap-2">
                   <button
                     onClick={() => { setEditing(plan); setShowForm(true); setFormError('') }}
@@ -88,12 +89,12 @@ export default function Plans() {
               <div className="text-3xl font-black text-lime mb-0.5">
                 ₹{plan.price.toLocaleString('en-IN')}
               </div>
-              <div className="flex gap-3 text-xs text-muted mb-3">
+              <div className="flex gap-3 mb-3 text-xs text-muted">
                 <span>Base: ₹{plan.baseAmount?.toLocaleString('en-IN')}</span>
                 <span>·</span>
                 <span>GST ({plan.taxRate}%): ₹{plan.taxAmount?.toLocaleString('en-IN')}</span>
               </div>
-              <p className="text-muted text-sm mb-3">
+              <p className="mb-3 text-sm text-muted">
                 {plan.durationDays} days
                 {plan.sessionsIncluded > 0 && ` · ${plan.sessionsIncluded} PT sessions`}
               </p>
@@ -107,13 +108,13 @@ export default function Plans() {
 
       {/* Plan form modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70">
           <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7">
             <button
               onClick={() => { setShowForm(false); setEditing(null) }}
-              className="absolute top-4 right-4 text-muted hover:text-cream text-xl leading-none"
+              className="absolute text-xl leading-none top-4 right-4 text-muted hover:text-cream"
             />
-            <h2 className="font-bold text-lg mb-5">{editing ? 'Edit plan' : 'New plan'}</h2>
+            <h2 className="mb-5 text-lg font-bold">{editing ? 'Edit plan' : 'New plan'}</h2>
             <PlanForm
               initial={editing}
               error={formError}
@@ -130,24 +131,24 @@ export default function Plans() {
 
 function PlanForm({ initial, error, loading, onSubmit, onClose }) {
   const [form, setForm] = useState({
-    name:             initial?.name             || '',
-    description:      initial?.description      || '',
-    durationDays:     initial?.durationDays     || 30,
-    price:            initial?.price            || '',
-    taxRate:          initial?.taxRate          ?? 18,
+    name: initial?.name || '',
+    description: initial?.description || '',
+    durationDays: initial?.durationDays || 30,
+    price: initial?.price || '',
+    taxRate: initial?.taxRate ?? 18,
     sessionsIncluded: initial?.sessionsIncluded || 0,
   })
   const set = (f) => (e) => setForm((v) => ({ ...v, [f]: e.target.value }))
 
   // Live GST breakdown
-  const priceNum  = parseFloat(form.price) || 0
-  const taxRate   = parseFloat(form.taxRate) || 18
-  const baseAmt   = priceNum > 0 ? Math.round((priceNum / (1 + taxRate / 100)) * 100) / 100 : 0
-  const taxAmt    = Math.round((priceNum - baseAmt) * 100) / 100
+  const priceNum = parseFloat(form.price) || 0
+  const taxRate = parseFloat(form.taxRate) || 18
+  const baseAmt = priceNum > 0 ? Math.round((priceNum / (1 + taxRate / 100)) * 100) / 100 : 0
+  const taxAmt = Math.round((priceNum - baseAmt) * 100) / 100
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit(form) }} className="flex flex-col gap-4">
-      {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">{error}</p>}
+      {error && <p className="px-3 py-2 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/20">{error}</p>}
 
       <Field label="Plan name *">
         <input type="text" value={form.name} onChange={set('name')} className="field-input" placeholder="Monthly Premium" />
@@ -157,13 +158,18 @@ function PlanForm({ initial, error, loading, onSubmit, onClose }) {
           <input type="number" min="1" value={form.durationDays} onChange={set('durationDays')} className="field-input" />
         </Field>
         <Field label="GST rate (%)">
-          <select value={form.taxRate} onChange={set('taxRate')} className="field-input">
-            <option value="0">0% (exempt)</option>
-            <option value="5">5%</option>
-            <option value="12">12%</option>
-            <option value="18">18% (standard)</option>
-            <option value="28">28%</option>
-          </select>
+          <Select
+            value={String(form.taxRate)}
+            onChange={(val) => setForm((v) => ({ ...v, taxRate: val }))}
+            options={[
+              { value: '0', label: '0% (exempt)' },
+              { value: '5', label: '5%' },
+              { value: '12', label: '12%' },
+              { value: '18', label: '18% (standard)' },
+              { value: '28', label: '28%' },
+            ]}
+            placeholder="Select GST rate"
+          />
         </Field>
       </div>
       <Field label="Final price member pays (₹, GST inclusive) *">
@@ -172,7 +178,7 @@ function PlanForm({ initial, error, loading, onSubmit, onClose }) {
           <div className="flex gap-4 mt-1.5 text-xs text-muted">
             <span>Base: <span className="text-cream">₹{baseAmt.toLocaleString('en-IN')}</span></span>
             <span>GST ({taxRate}%): <span className="text-cream">₹{taxAmt.toLocaleString('en-IN')}</span></span>
-            <span className="text-lime font-semibold">Member pays: ₹{priceNum.toLocaleString('en-IN')}</span>
+            <span className="font-semibold text-lime">Member pays: ₹{priceNum.toLocaleString('en-IN')}</span>
           </div>
         )}
       </Field>
@@ -180,7 +186,7 @@ function PlanForm({ initial, error, loading, onSubmit, onClose }) {
         <input type="number" min="0" value={form.sessionsIncluded} onChange={set('sessionsIncluded')} className="field-input" />
       </Field>
       <Field label="Description (optional)">
-        <textarea rows={2} value={form.description} onChange={set('description')} className="field-input resize-none" placeholder="What's included in this plan…" />
+        <textarea rows={2} value={form.description} onChange={set('description')} className="resize-none field-input" placeholder="What's included in this plan…" />
       </Field>
       <div className="flex gap-3 mt-1">
         <button type="button" onClick={onClose} className="flex-1 border border-white/10 text-muted py-2.5 rounded-lg text-sm hover:text-cream transition-all">Cancel</button>

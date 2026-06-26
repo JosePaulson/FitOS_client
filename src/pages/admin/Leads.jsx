@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { leadApi } from '../../api/lead.api'
+import Select from '../../components/ui/Select'
 
 const STAGES = [
   { key: 'new', label: 'New', color: 'border-blue-400/30   bg-blue-400/5' },
@@ -134,13 +135,12 @@ export default function Leads() {
                 )}
 
                 <div className="flex items-center gap-2 pt-1 mt-auto">
-                  <select
+                  <Select
                     value={lead.stage}
-                    onChange={(e) => moveStage(lead, e.target.value)}
-                    className="flex-1 text-xs bg-black border border-white/10 rounded-lg px-2 py-1.5 text-cream focus:outline-none focus:border-lime/40"
-                  >
-                    {STAGES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-                  </select>
+                    onChange={(val) => moveStage(lead, val)}
+                    options={STAGES.map((s) => ({ value: s.key, label: s.label }))}
+                    className="flex-1"
+                  />
                   <button
                     onClick={() => { setNoteTarget(lead); setNoteText('') }}
                     className="text-xs text-muted hover:text-lime border border-white/10 px-2.5 py-1.5 rounded-lg hover:border-lime/30 transition-all"

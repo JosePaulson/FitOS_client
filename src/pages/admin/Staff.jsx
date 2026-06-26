@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react'
 import { staffApi } from '../../api/index'
+import Select from '../../components/ui/Select'
 import { useAuth } from '../../context/AuthContext'
 
 const ROLE_COLORS = {
-  owner:        'bg-lime/10 text-lime border-lime/20',
-  manager:      'bg-blue-400/10 text-blue-400 border-blue-400/20',
-  trainer:      'bg-purple-400/10 text-purple-400 border-purple-400/20',
+  owner: 'bg-lime/10 text-lime border-lime/20',
+  manager: 'bg-blue-400/10 text-blue-400 border-blue-400/20',
+  trainer: 'bg-purple-400/10 text-purple-400 border-purple-400/20',
   receptionist: 'bg-yellow-400/10 text-yellow-400 border-yellow-400/20',
 }
 
 export default function Staff() {
   const { user: me } = useAuth()
-  const [staff,    setStaff]    = useState([])
-  const [loading,  setLoading]  = useState(true)
+  const [staff, setStaff] = useState([])
+  const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [formErr,  setFormErr]  = useState('')
+  const [formErr, setFormErr] = useState('')
   const [formLoad, setFormLoad] = useState(false)
 
   async function load() {
@@ -65,19 +66,19 @@ export default function Staff() {
 
       {loading ? (
         <div className="flex flex-col gap-3">
-          {[1,2,3].map((i) => <div key={i} className="h-16 bg-card border border-white/[0.08] rounded-xl animate-pulse" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-card border border-white/[0.08] rounded-xl animate-pulse" />)}
         </div>
       ) : (
         <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/[0.06] text-left">
-                <th className="px-5 py-3 text-xs text-muted font-semibold uppercase tracking-wider">Name</th>
-                <th className="px-5 py-3 text-xs text-muted font-semibold uppercase tracking-wider">Email</th>
-                <th className="px-5 py-3 text-xs text-muted font-semibold uppercase tracking-wider">Role</th>
-                <th className="px-5 py-3 text-xs text-muted font-semibold uppercase tracking-wider">Status</th>
+                <th className="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-muted">Name</th>
+                <th className="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-muted">Email</th>
+                <th className="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-muted">Role</th>
+                <th className="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-muted">Status</th>
                 {me?.role === 'owner' && (
-                  <th className="px-5 py-3 text-xs text-muted font-semibold uppercase tracking-wider">Actions</th>
+                  <th className="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-muted">Actions</th>
                 )}
               </tr>
             </thead>
@@ -86,27 +87,28 @@ export default function Staff() {
                 <tr key={s._id} className="hover:bg-white/[0.02] transition-colors">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-lime text-xs font-bold shrink-0">
+                      <div className="flex items-center justify-center w-8 h-8 text-xs font-bold border rounded-full bg-lime/10 border-lime/20 text-lime shrink-0">
                         {s.name?.[0]?.toUpperCase()}
                       </div>
                       <span className="font-medium">
                         {s.name}
-                        {s._id === me?._id && <span className="text-xs text-muted ml-1">(you)</span>}
+                        {s._id === me?._id && <span className="ml-1 text-xs text-muted">(you)</span>}
                       </span>
                     </div>
                   </td>
                   <td className="px-5 py-3.5 text-muted">{s.email}</td>
                   <td className="px-5 py-3.5">
                     {me?.role === 'owner' && s._id !== me?._id ? (
-                      <select
+                      <Select
                         value={s.role}
-                        onChange={(e) => changeRole(s, e.target.value)}
-                        className={`text-xs font-semibold px-2 py-0.5 rounded-full border bg-transparent cursor-pointer ${ROLE_COLORS[s.role] || ''}`}
-                      >
-                        {['manager', 'trainer', 'receptionist'].map((r) => (
-                          <option key={r} value={r} className="bg-card text-cream">{r}</option>
-                        ))}
-                      </select>
+                        onChange={(val) => changeRole(s, val)}
+                        options={[
+                          { value: 'manager', label: 'Manager' },
+                          { value: 'trainer', label: 'Trainer' },
+                          { value: 'receptionist', label: 'Receptionist' },
+                        ]}
+                        placeholder="Select role"
+                      />
                     ) : (
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${ROLE_COLORS[s.role] || ''}`}>
                         {s.role}
@@ -114,9 +116,8 @@ export default function Staff() {
                     )}
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                      s.isActive ? 'bg-lime/10 text-lime' : 'bg-red-400/10 text-red-400'
-                    }`}>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.isActive ? 'bg-lime/10 text-lime' : 'bg-red-400/10 text-red-400'
+                      }`}>
                       {s.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
@@ -125,9 +126,8 @@ export default function Staff() {
                       {s._id !== me?._id && (
                         <button
                           onClick={() => toggleActive(s)}
-                          className={`text-xs font-medium transition-colors ${
-                            s.isActive ? 'text-red-400/70 hover:text-red-400' : 'text-lime hover:text-lime-dark'
-                          }`}
+                          className={`text-xs font-medium transition-colors ${s.isActive ? 'text-red-400/70 hover:text-red-400' : 'text-lime hover:text-lime-dark'
+                            }`}
                         >
                           {s.isActive ? 'Deactivate' : 'Reactivate'}
                         </button>
@@ -143,10 +143,10 @@ export default function Staff() {
 
       {/* Add staff modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70">
           <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7">
-            <button onClick={() => setShowForm(false)} className="absolute top-4 right-5 text-muted hover:text-cream text-2xl leading-none">×</button>
-            <h2 className="font-bold text-lg mb-5">Add staff member</h2>
+            <button onClick={() => setShowForm(false)} className="absolute text-2xl leading-none top-4 right-5 text-muted hover:text-cream">×</button>
+            <h2 className="mb-5 text-lg font-bold">Add staff member</h2>
             <AddStaffForm error={formErr} loading={formLoad} onSubmit={handleAdd} onClose={() => setShowForm(false)} />
           </div>
         </div>
@@ -161,7 +161,7 @@ function AddStaffForm({ error, loading, onSubmit, onClose }) {
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit(form) }} className="flex flex-col gap-4">
-      {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">{error}</p>}
+      {error && <p className="px-3 py-2 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/20">{error}</p>}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-muted">Full name *</label>
         <input type="text" value={form.name} onChange={set('name')} className="field-input" placeholder="Trainer Name" />
@@ -172,11 +172,16 @@ function AddStaffForm({ error, loading, onSubmit, onClose }) {
       </div>
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-muted">Role *</label>
-        <select value={form.role} onChange={set('role')} className="field-input">
-          <option value="manager">Manager</option>
-          <option value="trainer">Trainer</option>
-          <option value="receptionist">Receptionist</option>
-        </select>
+        <Select
+          value={form.role}
+          onChange={(val) => setForm((v) => ({ ...v, role: val }))}
+          options={[
+            { value: 'manager', label: 'Manager' },
+            { value: 'trainer', label: 'Trainer' },
+            { value: 'receptionist', label: 'Receptionist' },
+          ]}
+          placeholder="Select role"
+        />
       </div>
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-muted">Temporary password *</label>
