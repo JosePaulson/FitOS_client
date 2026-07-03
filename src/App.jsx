@@ -30,6 +30,8 @@ import Attendance   from './pages/admin/Attendance'
 import Plans        from './pages/admin/Plans'
 import WorkoutPlans from './pages/admin/WorkoutPlans'
 import Staff        from './pages/admin/Staff'
+import Settings     from './pages/admin/Settings'
+import PTSessions   from './pages/admin/PTSessions'
 
 // Super admin pages
 import SAOverview from './pages/superadmin/Overview'
@@ -64,6 +66,12 @@ export default function App() {
         <Route path="workout-plans" element={<WorkoutPlans />} />
         <Route path="staff"         element={
           <PrivateRoute roles={['owner', 'manager']}><Staff /></PrivateRoute>
+        } />
+        <Route path="settings"      element={
+          <PrivateRoute roles={['owner']}><Settings /></PrivateRoute>
+        } />
+        <Route path="pt-sessions"    element={
+          <PrivateRoute roles={['owner','manager','trainer']}><PTSessions /></PrivateRoute>
         } />
       </Route>
 

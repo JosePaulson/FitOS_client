@@ -11,7 +11,9 @@ const NAV = [
   { to: '/dashboard/attendance',     icon: '📅', label: 'Attendance',     roles: null },
   { to: '/dashboard/plans',          icon: '📋', label: 'Plans',          roles: null },
   { to: '/dashboard/workout-plans',  icon: '🏋️', label: 'Workout & Diet', roles: null },
+  { to: '/dashboard/pt-sessions',    icon: '💪', label: 'PT Sessions',    roles: ['owner', 'manager', 'trainer'] },
   { to: '/dashboard/staff',          icon: '👤', label: 'Staff',          roles: ['owner', 'manager'] },
+  { to: '/dashboard/settings',       icon: '⚙️', label: 'Settings',       roles: ['owner'] },
 ]
 
 export default function AdminLayout() {

@@ -22,8 +22,9 @@ export const planApi = {
 export const invoiceApi = {
   list:       (params = {}) => api.get('/invoices', { params }),
   get:        (id)          => api.get(`/invoices/${id}`),
-  markPaid:   (id, method)  => api.patch(`/invoices/${id}/mark-paid`, { paymentMethod: method }),
-  revenue:    ()            => api.get('/invoices/stats/revenue'),
+  markPaid:    (id, method) => api.patch(`/invoices/${id}/mark-paid`, { paymentMethod: method }),
+  resendEmail: (id)         => api.post(`/invoices/${id}/resend-email`),
+  revenue:     ()           => api.get('/invoices/stats/revenue'),
 }
 
 /* ── Attendance ───────────────────────────────────────────────────────────── */
@@ -78,4 +79,22 @@ export const subscriptionApi = {
   create: (plan, interval) => api.post('/subscriptions/create', { plan, interval }),
   cancel: (atCycleEnd = true) => api.post('/subscriptions/cancel', { atCycleEnd }),
   status: () => api.get('/subscriptions/status'),
+}
+
+/* ── Gym settings ─────────────────────────────────────────────────────────── */
+export const gymApi = {
+  getSettings:   ()       => api.get('/gym/settings'),
+  updateSettings:(data)   => api.patch('/gym/settings', data),
+  testEmail:     ()       => api.post('/gym/settings/test-email'),
+}
+
+/* ── PT Sessions (admin) ──────────────────────────────────────────────────── */
+export const ptApi = {
+  list:       (params)       => api.get('/pt-sessions', { params }),
+  get:        (id)           => api.get(`/pt-sessions/${id}`),
+  create:     (data)         => api.post('/pt-sessions', data),
+  update:     (id, data)     => api.patch(`/pt-sessions/${id}`, data),
+  delete:     (id)           => api.delete(`/pt-sessions/${id}`),
+  logWeight:  (id, data)     => api.post(`/pt-sessions/${id}/body-weight`, data),
+  progress:   (memberId)     => api.get(`/pt-sessions/member/${memberId}/progress`),
 }
