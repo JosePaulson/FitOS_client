@@ -4,10 +4,12 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import './index.css'
+import ScrollRestoration from './components/layout/ScrollRestoration'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
+      <ScrollRestoration />
       <AuthProvider>
         <App />
       </AuthProvider>
