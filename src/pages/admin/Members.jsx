@@ -5,27 +5,27 @@ import api from '../../api/axios'
 import Select from '../../components/ui/Select'
 
 const STATUS_COLORS = {
-  active:    'bg-lime/10 text-lime',
-  expired:   'bg-red-500/10 text-red-400',
-  paused:    'bg-yellow-500/10 text-yellow-400',
+  active: 'bg-lime/10 text-lime',
+  expired: 'bg-red-500/10 text-red-400',
+  paused: 'bg-yellow-500/10 text-yellow-400',
   cancelled: 'bg-white/5 text-muted',
 }
 
 export default function Members() {
   const [searchParams] = useSearchParams()
   const [members, setMembers] = useState([])
-  const [plans,   setPlans]   = useState([])
-  const [total,   setTotal]   = useState(0)
-  const [page,    setPage]    = useState(1)
-  const [search,  setSearch]  = useState('')
-  const [status,  setStatus]  = useState('')
+  const [plans, setPlans] = useState([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [status, setStatus] = useState('')
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(searchParams.get('action') === 'new')
-  const [selected,  setSelected]  = useState(null)   // member for renew modal
-  const [pinTarget,  setPinTarget]  = useState(null)   // member for set-pin modal
-  const [pin,        setPin]        = useState('')
+  const [selected, setSelected] = useState(null)   // member for renew modal
+  const [pinTarget, setPinTarget] = useState(null)   // member for set-pin modal
+  const [pin, setPin] = useState('')
   const [pinLoading, setPinLoading] = useState(false)
-  const [pinError,   setPinError]   = useState('')
+  const [pinError, setPinError] = useState('')
   const [pinSuccess, setPinSuccess] = useState('')
   const [formError, setFormError] = useState('')
   const [formLoading, setFormLoading] = useState(false)
@@ -38,7 +38,7 @@ export default function Members() {
     try {
       const { data } = await api.post('/member-portal/auth/set-pin', {
         memberId: pinTarget._id,
-        gymId:    pinTarget.gymId,
+        gymId: pinTarget.gymId,
         pin,
       })
       setPinSuccess(data.message)
@@ -80,19 +80,19 @@ export default function Members() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+      <div className="flex flex-col gap-3 mb-5 sm:flex-row">
         <input
           type="text" placeholder="Search name, phone, email…"
           value={search} onChange={(e) => setSearch(e.target.value)}
-          className="field-input flex-1"
+          className="flex-1 field-input"
         />
         <Select
           value={status}
           onChange={setStatus}
           options={[
-            { value: 'active',    label: 'Active' },
-            { value: 'expired',   label: 'Expired' },
-            { value: 'paused',    label: 'Paused' },
+            { value: 'active', label: 'Active' },
+            { value: 'expired', label: 'Expired' },
+            { value: 'paused', label: 'Paused' },
             { value: 'cancelled', label: 'Cancelled' },
           ]}
           placeholder="All statuses"
@@ -107,12 +107,12 @@ export default function Members() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/[0.06] text-left">
-                <th className="px-5 py-3 text-xs text-muted font-semibold uppercase tracking-wider">Member</th>
-                <th className="px-5 py-3 text-xs text-muted font-semibold uppercase tracking-wider">Phone</th>
-                <th className="px-5 py-3 text-xs text-muted font-semibold uppercase tracking-wider">Plan</th>
-                <th className="px-5 py-3 text-xs text-muted font-semibold uppercase tracking-wider">Expires</th>
-                <th className="px-5 py-3 text-xs text-muted font-semibold uppercase tracking-wider">Status</th>
-                <th className="px-5 py-3 text-xs text-muted font-semibold uppercase tracking-wider">Actions</th>
+                <th className="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-muted">Member</th>
+                <th className="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-muted">Phone</th>
+                <th className="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-muted">Plan</th>
+                <th className="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-muted">Expires</th>
+                <th className="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-muted">Status</th>
+                <th className="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-muted">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
@@ -128,7 +128,7 @@ export default function Members() {
                 ))
               ) : members.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-muted text-sm">
+                  <td colSpan={6} className="px-5 py-12 text-sm text-center text-muted">
                     {search || status ? 'No members match your filters.' : 'No members yet. Add your first one!'}
                   </td>
                 </tr>
@@ -151,13 +151,13 @@ export default function Members() {
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => setSelected(m)}
-                        className="text-xs text-lime hover:text-lime-dark font-medium"
+                        className="text-xs font-medium text-lime hover:text-lime-dark"
                       >
                         Renew
                       </button>
                       <button
                         onClick={() => { setPinTarget(m); setPin(''); setPinError(''); setPinSuccess('') }}
-                        className="text-xs text-muted hover:text-cream font-medium"
+                        className="px-2 py-1 text-xs font-medium text-red-500 rounded-full bg-red-600/10 hover:bg-red-300/20"
                         title="Set member portal PIN"
                       >
                         Set PIN
@@ -223,11 +223,11 @@ export default function Members() {
       {pinTarget && (
         <Modal title={`Set portal PIN — ${pinTarget.name}`} onClose={() => setPinTarget(null)}>
           <div className="flex flex-col gap-4">
-            <p className="text-muted text-sm">
-              This PIN lets <span className="text-cream font-medium">{pinTarget.name}</span> log into the FitOS Member Portal at <span className="text-lime text-xs font-mono">member.fitos.in</span> using their phone number.
+            <p className="text-sm text-muted">
+              This PIN lets <span className="font-medium text-cream">{pinTarget.name}</span> log into the FitOS Member Portal at <span className="font-mono text-xs text-lime">member.fitos.in</span> using their phone number.
             </p>
-            {pinError   && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">{pinError}</p>}
-            {pinSuccess && <p className="text-lime text-sm bg-lime/10 border border-lime/20 px-3 py-2 rounded-lg">{pinSuccess}</p>}
+            {pinError && <p className="px-3 py-2 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/20">{pinError}</p>}
+            {pinSuccess && <p className="px-3 py-2 text-sm border rounded-lg text-lime bg-lime/10 border-lime/20">{pinSuccess}</p>}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-muted">PIN (4–6 digits)</label>
               <input
@@ -273,10 +273,10 @@ export default function Members() {
 
 function Modal({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70">
       <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7 relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-muted hover:text-cream text-xl leading-none">×</button>
-        <h2 className="font-bold text-lg mb-5">{title}</h2>
+        <button onClick={onClose} className="absolute text-xl leading-none top-4 right-4 text-muted hover:text-cream">×</button>
+        <h2 className="mb-5 text-lg font-bold">{title}</h2>
         {children}
       </div>
     </div>
@@ -289,7 +289,7 @@ function AddMemberForm({ plans, error, loading, onSubmit, onClose }) {
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit(form) }} className="flex flex-col gap-4">
-      {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">{error}</p>}
+      {error && <p className="px-3 py-2 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/20">{error}</p>}
       <Field label="Full name *"><input type="text" value={form.name} onChange={set('name')} className="field-input" placeholder="Rahul Sharma" /></Field>
       <Field label="Phone *"><input type="tel" value={form.phone} onChange={set('phone')} className="field-input" placeholder="+91 98765 43210" /></Field>
       <Field label="Email"><input type="email" value={form.email} onChange={set('email')} className="field-input" placeholder="optional" /></Field>
@@ -305,7 +305,7 @@ function AddMemberForm({ plans, error, loading, onSubmit, onClose }) {
         <Select
           value={form.source}
           onChange={(val) => setForm((v) => ({ ...v, source: val }))}
-          options={['walk-in','referral','social','lead','online','other'].map((s) => ({ value: s, label: s }))}
+          options={['walk-in', 'referral', 'social', 'lead', 'online', 'other'].map((s) => ({ value: s, label: s }))}
           placeholder="Select source"
         />
       </Field>
@@ -323,9 +323,9 @@ function RenewForm({ member, plans, onSubmit, onClose }) {
   const [planId, setPlanId] = useState(member.currentPlanId?._id || '')
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-muted text-sm">
+      <p className="text-sm text-muted">
         Current expiry:{' '}
-        <span className="text-cream font-medium">
+        <span className="font-medium text-cream">
           {member.membershipExpiryDate
             ? new Date(member.membershipExpiryDate).toLocaleDateString('en-IN')
             : 'Not set'}

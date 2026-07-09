@@ -56,6 +56,9 @@ export const workoutApi = {
   updateDiet:    (id, data)          => api.patch(`/workout-plans/diet/${id}`, data),
   assignDiet:    (id, memberIds)     => api.post(`/workout-plans/diet/${id}/assign`, { memberIds }),
   removeDiet:    (id)                => api.delete(`/workout-plans/diet/${id}`),
+
+  // Prebuilt starter library
+  seedTemplates: ()                  => api.post('/workout-plans/seed-templates'),
 }
 
 /* ── Staff ────────────────────────────────────────────────────────────────── */
@@ -97,4 +100,52 @@ export const ptApi = {
   delete:     (id)           => api.delete(`/pt-sessions/${id}`),
   logWeight:  (id, data)     => api.post(`/pt-sessions/${id}/body-weight`, data),
   progress:   (memberId)     => api.get(`/pt-sessions/member/${memberId}/progress`),
+}
+
+/* ── Equipment (admin) ────────────────────────────────────────────────────── */
+export const equipmentApi = {
+  list:   (params)   => api.get('/equipment', { params }),
+  get:    (id)        => api.get(`/equipment/${id}`),
+  // `data` is a plain object; `imageFile` is an optional File — built into
+  // FormData here so callers never have to think about multipart encoding.
+  create: (data, imageFile) => {
+    const fd = toEquipmentFormData(data, imageFile)
+    return api.post('/equipment', fd, { headers: { 'Content-Type': undefined } })
+  },
+  update: (id, data, imageFile) => {
+    const fd = toEquipmentFormData(data, imageFile)
+    return api.patch(`/equipment/${id}`, fd, { headers: { 'Content-Type': undefined } })
+  },
+  remove: (id) => api.delete(`/equipment/${id}`),
+}
+
+function toEquipmentFormData(data, imageFile) {
+  const fd = new FormData()
+  Object.entries(data).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, v) })
+  if (imageFile) fd.append('image', imageFile)
+  return fd
+}
+
+/* ── Workout Library (admin) ─────────────────────────────────────────────── */
+export const workoutLibraryApi = {
+  list:   (params) => api.get('/workout-library', { params }),
+  get:    (id)      => api.get(`/workout-library/${id}`),
+  // `files` is an optional { image?: File, video?: File }
+  create: (data, files = {}) => {
+    const fd = toWorkoutFormData(data, files)
+    return api.post('/workout-library', fd, { headers: { 'Content-Type': undefined } })
+  },
+  update: (id, data, files = {}) => {
+    const fd = toWorkoutFormData(data, files)
+    return api.patch(`/workout-library/${id}`, fd, { headers: { 'Content-Type': undefined } })
+  },
+  remove: (id) => api.delete(`/workout-library/${id}`),
+}
+
+function toWorkoutFormData(data, files) {
+  const fd = new FormData()
+  Object.entries(data).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, v) })
+  if (files.image) fd.append('image', files.image)
+  if (files.video) fd.append('video', files.video)
+  return fd
 }

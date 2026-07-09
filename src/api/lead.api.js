@@ -10,6 +10,12 @@ export const leadApi = {
   /** List leads for the gym (auth required) */
   list: (params = {}) => api.get('/leads', { params }),
 
+  /**
+   * Staff-added lead — walk-in, referral, phone call, etc.
+   * Scoped to the logged-in staff member's own gym.
+   */
+  create: (data) => api.post('/leads', data),
+
   /** Get single lead */
   get: (id) => api.get(`/leads/${id}`),
 
