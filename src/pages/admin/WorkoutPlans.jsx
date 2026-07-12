@@ -5,29 +5,43 @@ import Select from '../../components/ui/Select'
 const GOALS = ['general', 'weight-loss', 'muscle-gain', 'endurance', 'flexibility']
 
 export default function WorkoutPlans() {
-  const [tab, setTab] = useState('workout')  // 'workout' | 'diet'
-  const [plans, setPlans] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editing, setEditing] = useState(null)
+  const [tab,       setTab]       = useState('workout')  // 'workout' | 'diet'
+  const [plans,     setPlans]     = useState([])
+  const [loading,   setLoading]   = useState(true)
+  const [showForm,  setShowForm]  = useState(false)
+  const [editing,   setEditing]   = useState(null)
   const [assigning, setAssigning] = useState(null)
-  const [members, setMembers] = useState([])
-  const [formErr, setFormErr] = useState('')
-  const [formLoad, setFormLoad] = useState(false)
+  const [members,   setMembers]   = useState([])
+  const [formErr,   setFormErr]   = useState('')
+  const [formLoad,  setFormLoad]  = useState(false)
+  const [showPrebuilt, setShowPrebuilt] = useState(true)
+  const [seeding,      setSeeding]      = useState(false)
+  const [seedMsg,       setSeedMsg]     = useState('')
 
   async function load() {
     setLoading(true)
     try {
-      const fn = tab === 'workout' ? workoutApi.listWorkout : workoutApi.listDiet
-      const { data } = await fn({ templates: false })
+      const fn     = tab === 'workout' ? workoutApi.listWorkout : workoutApi.listDiet
+      const { data } = await fn()
       setPlans(data)
     } catch { /* ignore */ }
     finally { setLoading(false) }
   }
 
+  async function handleSeedTemplates() {
+    setSeeding(true); setSeedMsg('')
+    try {
+      const { data } = await workoutApi.seedTemplates()
+      setSeedMsg(data.message)
+      load()
+    } catch (err) {
+      setSeedMsg(err.response?.data?.message || 'Failed to load starter plans')
+    } finally { setSeeding(false) }
+  }
+
   useEffect(() => { load() }, [tab])
   useEffect(() => {
-    memberApi.list({ limit: 200 }).then(({ data }) => setMembers(data.members)).catch(() => { })
+    memberApi.list({ limit: 200 }).then(({ data }) => setMembers(data.members)).catch(() => {})
   }, [])
 
   async function handleSave(form) {
@@ -59,6 +73,8 @@ export default function WorkoutPlans() {
     } catch { alert('Failed to remove') }
   }
 
+  const visiblePlans = showPrebuilt ? plans : plans.filter((p) => !p.isTemplate)
+
   return (
     <div className="max-w-5xl mx-auto">
       {/* Header */}
@@ -81,30 +97,66 @@ export default function WorkoutPlans() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all capitalize ${tab === t ? 'bg-lime text-black font-bold' : 'text-muted hover:text-cream'
-              }`}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
+              tab === t ? 'bg-lime text-black font-bold' : 'text-muted hover:text-cream'
+            }`}
           >
             {t === 'workout' ? '🏋️ Workout' : '🥗 Diet'}
           </button>
         ))}
       </div>
 
+      {/* Prebuilt library controls */}
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
+        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+          <button
+            type="button"
+            onClick={() => setShowPrebuilt((v) => !v)}
+            className={`relative w-10 h-6 rounded-full transition-colors ${showPrebuilt ? 'bg-lime' : 'bg-white/10'}`}
+          >
+            <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-black transition-all ${showPrebuilt ? 'left-[18px]' : 'left-0.5'}`} />
+          </button>
+          <span className="text-sm text-muted">Show prebuilt {tab} plans</span>
+        </label>
+
+        <div className="flex items-center gap-3">
+          {seedMsg && <span className="text-xs text-muted">{seedMsg}</span>}
+          <button
+            onClick={handleSeedTemplates}
+            disabled={seeding}
+            className="text-xs text-lime hover:text-lime-dark border border-lime/20 hover:border-lime/40 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+          >
+            {seeding ? 'Loading…' : '✨ Load starter plans'}
+          </button>
+        </div>
+      </div>
+
       {/* Plans grid */}
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {[1, 2, 3, 4].map((i) => <div key={i} className="h-44 bg-card border border-white/[0.08] rounded-xl animate-pulse" />)}
+        <div className="grid sm:grid-cols-2 gap-4">
+          {[1,2,3,4].map((i) => <div key={i} className="h-44 bg-card border border-white/[0.08] rounded-xl animate-pulse" />)}
         </div>
-      ) : plans.length === 0 ? (
-        <div className="py-20 text-sm text-center text-muted">
-          No {tab} plans yet. Create one to assign to members.
+      ) : visiblePlans.length === 0 ? (
+        <div className="text-center py-20 text-muted text-sm">
+          {plans.length > 0
+            ? `All ${tab} plans are prebuilt — toggle "Show prebuilt" on to see them.`
+            : <>No {tab} plans yet. Create one, or click "✨ Load starter plans" above for a ready-made library.</>
+          }
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {plans.map((plan) => (
-            <div key={plan._id} className="bg-card border border-white/[0.08] rounded-xl p-6 flex flex-col gap-3">
+        <div className="grid sm:grid-cols-2 gap-4">
+          {visiblePlans.map((plan) => (
+            <div key={plan._id} className={`bg-card border rounded-xl p-6 flex flex-col gap-3 ${plan.isTemplate ? 'border-lime/20' : 'border-white/[0.08]'}`}>
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-bold">{plan.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold">{plan.name}</h3>
+                    {plan.isTemplate && (
+                      <span className="text-[9px] font-bold bg-lime/15 text-lime px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
+                        Prebuilt
+                      </span>
+                    )}
+                  </div>
                   {plan.description && <p className="text-muted text-xs mt-0.5">{plan.description}</p>}
                 </div>
                 <span className="text-[10px] bg-lime/10 text-lime border border-lime/20 px-2 py-0.5 rounded-full capitalize shrink-0">
@@ -143,7 +195,7 @@ export default function WorkoutPlans() {
               )}
 
               {/* Actions */}
-              <div className="flex gap-2 pt-1 mt-auto">
+              <div className="flex gap-2 mt-auto pt-1">
                 <button
                   onClick={() => setAssigning(plan)}
                   className="flex-1 text-xs text-lime border border-lime/20 py-1.5 rounded-lg hover:bg-lime/10 transition-all"
@@ -173,7 +225,7 @@ export default function WorkoutPlans() {
         <Modal title={`${editing ? 'Edit' : 'New'} ${tab} plan`} onClose={() => { setShowForm(false); setEditing(null) }}>
           {tab === 'workout'
             ? <WorkoutForm initial={editing} error={formErr} loading={formLoad} onSubmit={handleSave} onClose={() => { setShowForm(false); setEditing(null) }} />
-            : <DietForm initial={editing} error={formErr} loading={formLoad} onSubmit={handleSave} onClose={() => { setShowForm(false); setEditing(null) }} />
+            : <DietForm    initial={editing} error={formErr} loading={formLoad} onSubmit={handleSave} onClose={() => { setShowForm(false); setEditing(null) }} />
           }
         </Modal>
       )}
@@ -195,10 +247,10 @@ export default function WorkoutPlans() {
 
 function Modal({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-y-auto bg-black/70">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4 py-8 overflow-y-auto">
       <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-lg p-7 relative my-auto">
-        <button onClick={onClose} className="absolute text-2xl leading-none top-4 right-5 text-muted hover:text-cream">×</button>
-        <h2 className="mb-5 text-lg font-bold capitalize">{title}</h2>
+        <button onClick={onClose} className="absolute top-4 right-5 text-muted hover:text-cream text-2xl leading-none">×</button>
+        <h2 className="font-bold text-lg mb-5 capitalize">{title}</h2>
         {children}
       </div>
     </div>
@@ -216,11 +268,11 @@ function Field({ label, children }) {
 
 function WorkoutForm({ initial, error, loading, onSubmit, onClose }) {
   const [form, setForm] = useState({
-    name: initial?.name || '',
-    description: initial?.description || '',
-    goal: initial?.goal || 'general',
+    name:          initial?.name          || '',
+    description:   initial?.description   || '',
+    goal:          initial?.goal          || 'general',
     durationWeeks: initial?.durationWeeks || 4,
-    isTemplate: initial?.isTemplate || false,
+    isTemplate:    initial?.isTemplate    || false,
   })
   const [days, setDays] = useState(initial?.days || [])
 
@@ -254,7 +306,7 @@ function WorkoutForm({ initial, error, loading, onSubmit, onClose }) {
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit({ ...form, days }) }} className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
-      {error && <p className="px-3 py-2 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/20">{error}</p>}
+      {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">{error}</p>}
 
       <Field label="Plan name *">
         <input type="text" value={form.name} onChange={set('name')} className="field-input" placeholder="Push / Pull / Legs" />
@@ -273,7 +325,7 @@ function WorkoutForm({ initial, error, loading, onSubmit, onClose }) {
         </Field>
       </div>
       <Field label="Description">
-        <textarea rows={2} value={form.description} onChange={set('description')} className="resize-none field-input" />
+        <textarea rows={2} value={form.description} onChange={set('description')} className="field-input resize-none" />
       </Field>
 
       {/* Training days */}
@@ -286,28 +338,28 @@ function WorkoutForm({ initial, error, loading, onSubmit, onClose }) {
           <div key={di} className="bg-black border border-white/[0.06] rounded-xl p-4 mb-3">
             <div className="flex gap-2 mb-3">
               <input value={day.day} onChange={(e) => setDay(di, 'day', e.target.value)}
-                className="flex-1 text-xs field-input" placeholder="Day label" />
+                className="field-input flex-1 text-xs" placeholder="Day label" />
               <input value={day.focus} onChange={(e) => setDay(di, 'focus', e.target.value)}
-                className="flex-1 text-xs field-input" placeholder="Focus (e.g. Chest)" />
-              <button type="button" onClick={() => removeDay(di)} className="px-1 text-lg leading-none text-red-400/60 hover:text-red-400">×</button>
+                className="field-input flex-1 text-xs" placeholder="Focus (e.g. Chest)" />
+              <button type="button" onClick={() => removeDay(di)} className="text-red-400/60 hover:text-red-400 text-lg leading-none px-1">×</button>
             </div>
             {day.exercises.map((ex, ei) => (
-              <div key={ei} className="flex items-center gap-2 mb-2">
+              <div key={ei} className="flex gap-2 mb-2 items-center">
                 <input value={ex.name} onChange={(e) => setExercise(di, ei, 'name', e.target.value)}
                   className="field-input flex-[2] text-xs" placeholder="Exercise" />
                 <input value={ex.sets} onChange={(e) => setExercise(di, ei, 'sets', e.target.value)}
-                  className="text-xs field-input w-14" placeholder="Sets" type="number" min="1" />
+                  className="field-input w-14 text-xs" placeholder="Sets" type="number" min="1" />
                 <input value={ex.reps} onChange={(e) => setExercise(di, ei, 'reps', e.target.value)}
-                  className="w-16 text-xs field-input" placeholder="Reps" />
-                <button type="button" onClick={() => removeExercise(di, ei)} className="px-1 text-base text-red-400/50 hover:text-red-400">×</button>
+                  className="field-input w-16 text-xs" placeholder="Reps" />
+                <button type="button" onClick={() => removeExercise(di, ei)} className="text-red-400/50 hover:text-red-400 text-base px-1">×</button>
               </div>
             ))}
-            <button type="button" onClick={() => addExercise(di)} className="mt-1 text-xs text-muted hover:text-lime">+ Exercise</button>
+            <button type="button" onClick={() => addExercise(di)} className="text-xs text-muted hover:text-lime mt-1">+ Exercise</button>
           </div>
         ))}
       </div>
 
-      <div className="sticky bottom-0 flex gap-3 py-2 mt-2 bg-card">
+      <div className="flex gap-3 mt-2 sticky bottom-0 bg-card py-2">
         <button type="button" onClick={onClose} className="flex-1 border border-white/10 text-muted py-2.5 rounded-lg text-sm hover:text-cream transition-all">Cancel</button>
         <button type="submit" disabled={loading} className="flex-[2] bg-lime text-black font-bold py-2.5 rounded-lg text-sm hover:bg-lime-dark transition-all disabled:opacity-60">
           {loading ? 'Saving…' : (initial ? 'Update plan' : 'Create plan')}
@@ -319,19 +371,19 @@ function WorkoutForm({ initial, error, loading, onSubmit, onClose }) {
 
 function DietForm({ initial, error, loading, onSubmit, onClose }) {
   const [form, setForm] = useState({
-    name: initial?.name || '',
-    description: initial?.description || '',
-    goal: initial?.goal || 'general',
+    name:           initial?.name           || '',
+    description:    initial?.description    || '',
+    goal:           initial?.goal           || 'general',
     targetCalories: initial?.targetCalories || '',
-    targetProtein: initial?.targetProtein || '',
-    targetCarbs: initial?.targetCarbs || '',
-    targetFat: initial?.targetFat || '',
+    targetProtein:  initial?.targetProtein  || '',
+    targetCarbs:    initial?.targetCarbs    || '',
+    targetFat:      initial?.targetFat      || '',
   })
   const set = (f) => (e) => setForm((v) => ({ ...v, [f]: e.target.value }))
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit(form) }} className="flex flex-col gap-4">
-      {error && <p className="px-3 py-2 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/20">{error}</p>}
+      {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">{error}</p>}
       <Field label="Plan name *">
         <input type="text" value={form.name} onChange={set('name')} className="field-input" placeholder="High Protein Fat Loss" />
       </Field>
@@ -339,7 +391,7 @@ function DietForm({ initial, error, loading, onSubmit, onClose }) {
         <Select
           value={form.goal}
           onChange={(val) => setForm((v) => ({ ...v, goal: val }))}
-          options={['general', 'weight-loss', 'muscle-gain', 'maintenance'].map((g) => ({ value: g, label: g.replace('-', ' ') }))}
+          options={['general','weight-loss','muscle-gain','maintenance'].map((g) => ({ value: g, label: g.replace('-', ' ') }))}
           placeholder="Select goal"
         />
       </Field>
@@ -350,7 +402,7 @@ function DietForm({ initial, error, loading, onSubmit, onClose }) {
         <Field label="Fat (g)"><input type="number" value={form.targetFat} onChange={set('targetFat')} className="field-input" placeholder="60" /></Field>
       </div>
       <Field label="Description / notes">
-        <textarea rows={3} value={form.description} onChange={set('description')} className="resize-none field-input" placeholder="Meal timing, notes for the member…" />
+        <textarea rows={3} value={form.description} onChange={set('description')} className="field-input resize-none" placeholder="Meal timing, notes for the member…" />
       </Field>
       <div className="flex gap-3 mt-1">
         <button type="button" onClick={onClose} className="flex-1 border border-white/10 text-muted py-2.5 rounded-lg text-sm hover:text-cream transition-all">Cancel</button>
@@ -377,28 +429,30 @@ function AssignModal({ plan, members, onAssign, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4">
       <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7">
-        <button onClick={onClose} className="absolute text-2xl leading-none top-4 right-5 text-muted hover:text-cream">×</button>
-        <h2 className="mb-1 text-lg font-bold">Assign plan</h2>
-        <p className="mb-4 text-sm text-muted">{plan.name}</p>
+        <button onClick={onClose} className="absolute top-4 right-5 text-muted hover:text-cream text-2xl leading-none">×</button>
+        <h2 className="font-bold text-lg mb-1">Assign plan</h2>
+        <p className="text-muted text-sm mb-4">{plan.name}</p>
 
-        <input type="text" placeholder="Search member…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full mb-3 field-input" />
+        <input type="text" placeholder="Search member…" value={search} onChange={(e) => setSearch(e.target.value)} className="field-input w-full mb-3" />
 
-        <div className="flex flex-col gap-1 mb-5 overflow-y-auto max-h-52">
+        <div className="max-h-52 overflow-y-auto flex flex-col gap-1 mb-5">
           {filtered.map((m) => (
             <button key={m._id} type="button" onClick={() => toggle(m._id)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left ${selected.has(m._id) ? 'bg-lime/10 border border-lime/20' : 'hover:bg-white/[0.04] border border-transparent'
-                }`}>
-              <span className={`w-4 h-4 rounded border flex items-center justify-center text-xs shrink-0 ${selected.has(m._id) ? 'bg-lime border-lime text-black font-bold' : 'border-white/20'
-                }`}>{selected.has(m._id) ? '✓' : ''}</span>
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left ${
+                selected.has(m._id) ? 'bg-lime/10 border border-lime/20' : 'hover:bg-white/[0.04] border border-transparent'
+              }`}>
+              <span className={`w-4 h-4 rounded border flex items-center justify-center text-xs shrink-0 ${
+                selected.has(m._id) ? 'bg-lime border-lime text-black font-bold' : 'border-white/20'
+              }`}>{selected.has(m._id) ? '✓' : ''}</span>
               <div>
                 <div className="text-sm font-medium">{m.name}</div>
                 <div className="text-xs text-muted">{m.phone}</div>
               </div>
             </button>
           ))}
-          {filtered.length === 0 && <p className="py-4 text-sm text-center text-muted">No members found</p>}
+          {filtered.length === 0 && <p className="text-muted text-sm text-center py-4">No members found</p>}
         </div>
 
         <div className="flex gap-3">

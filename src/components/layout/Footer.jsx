@@ -32,7 +32,7 @@ const FOOTER_COLS = [
 export default function Footer() {
   return (
     <footer className="border-t border-white/[0.08] mt-auto">
-      <div className="max-w-7xl mx-auto px-5 md:px-8 py-14">
+      <div className="px-5 mx-auto max-w-7xl md:px-8 py-14">
         {/* Top row */}
         <div className="flex flex-col md:flex-row justify-between gap-12 pb-10 border-b border-white/[0.08]">
           {/* Brand */}
@@ -40,7 +40,7 @@ export default function Footer() {
             <div className="text-xl font-black tracking-tight text-cream">
               Fit<span className="text-lime">OS</span>
             </div>
-            <p className="text-muted text-sm mt-2 leading-relaxed">
+            <p className="mt-2 text-sm leading-relaxed text-muted">
               Gym management software built for Indian fitness businesses.
             </p>
           </div>
@@ -49,7 +49,7 @@ export default function Footer() {
           <div className="flex flex-wrap gap-12">
             {FOOTER_COLS.map((col) => (
               <div key={col.title}>
-                <div className="text-xs font-bold uppercase tracking-widest text-muted mb-4">
+                <div className="mb-4 text-xs font-bold tracking-widest uppercase text-muted">
                   {col.title}
                 </div>
                 <ul className="flex flex-col gap-3">
@@ -58,14 +58,14 @@ export default function Footer() {
                       {l.href.startsWith('#') || l.href.startsWith('/#') ? (
                         <a
                           href={l.href}
-                          className="text-sm text-muted hover:text-cream transition-colors"
+                          className="text-sm transition-colors text-muted hover:text-cream"
                         >
                           {l.label}
                         </a>
                       ) : (
                         <Link
                           to={l.href}
-                          className="text-sm text-muted hover:text-cream transition-colors"
+                          className="text-sm transition-colors text-muted hover:text-cream"
                         >
                           {l.label}
                         </Link>
@@ -79,8 +79,8 @@ export default function Footer() {
         </div>
 
         {/* Bottom row */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-3 pt-8 text-xs text-muted">
-          <span>© {new Date().getFullYear()} FitOS. Made with ❤️ in India.</span>
+        <div className="flex flex-col items-center justify-between gap-3 pt-8 text-xs md:flex-row text-muted">
+          <span>© {new Date().getFullYear()} FitOS. c/o Kerasoft India, All rights reserved</span>
           <span>All prices are GST-inclusive (18%).</span>
         </div>
       </div>

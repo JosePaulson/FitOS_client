@@ -4,20 +4,27 @@ import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
   const { login } = useAuth()
-  const navigate  = useNavigate()
-  const location  = useLocation()
-  const from      = location.state?.from?.pathname || '/dashboard'
+  const navigate = useNavigate()
+  const location = useLocation()
+  const from = location.state?.from?.pathname || '/dashboard'
 
-  const [form, setForm]     = useState({ email: '', password: '' })
-  const [error, setError]   = useState('')
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
-  const set = (f) => (e) => setForm((v) => ({ ...v, [f]: e.target.value }))
+  const set = (field) => (e) =>
+    setForm((v) => ({ ...v, [field]: e.target.value }))
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!form.email || !form.password) { setError('Both fields are required'); return }
+
+    if (!form.email || !form.password) {
+      setError('Both fields are required')
+      return
+    }
+
     setLoading(true)
     try {
       await login(form.email, form.password)
@@ -30,22 +37,20 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center px-4">
-      {/* Background grid */}
-      <div className="absolute inset-0 bg-grid-lime bg-grid opacity-50 pointer-events-none" />
+    <div className="relative flex items-center justify-center min-h-screen px-4 bg-black">
+      <div className="absolute inset-0 opacity-50 pointer-events-none bg-grid-lime bg-grid" />
 
       <div className="relative w-full max-w-md">
-        {/* Logo */}
-        <Link to="/" className="block text-center text-2xl font-black tracking-tight text-cream mb-8">
+        <Link to="/" className="block mb-8 text-2xl font-black tracking-tight text-center text-cream">
           Fit<span className="text-lime">OS</span>
         </Link>
 
         <div className="bg-card border border-white/[0.08] rounded-2xl p-8">
-          <h1 className="text-xl font-bold mb-1">Welcome back</h1>
-          <p className="text-muted text-sm mb-7">Sign in to your gym dashboard</p>
+          <h1 className="mb-1 text-xl font-bold">Welcome back</h1>
+          <p className="text-sm text-muted mb-7">Sign in to your gym dashboard</p>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg mb-5">
+            <div className="px-4 py-3 mb-5 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/30">
               {error}
             </div>
           )}
@@ -54,36 +59,57 @@ export default function Login() {
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-muted">Email address</label>
               <input
-                type="email" placeholder="you@yourgym.com" autoComplete="email"
-                value={form.email} onChange={set('email')}
+                type="email"
+                placeholder="you@yourgym.com"
+                autoComplete="email"
+                value={form.email}
+                onChange={set('email')}
                 className="field-input"
               />
             </div>
+
             <div className="flex flex-col gap-1.5">
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-muted">Password</label>
                 <Link to="/forgot-password" className="text-xs text-lime hover:text-lime-dark">
                   Forgot password?
                 </Link>
               </div>
-              <input
-                type="password" placeholder="••••••••" autoComplete="current-password"
-                value={form.password} onChange={set('password')}
-                className="field-input"
-              />
+
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  value={form.password}
+                  onChange={set('password')}
+                  className="pr-20 field-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute inset-y-0 text-xs font-medium right-3 text-lime hover:text-lime-dark"
+                  aria-pressed={showPassword}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
             </div>
+
             <button
-              type="submit" disabled={loading}
-              className="mt-2 w-full bg-lime text-black font-bold py-3 rounded-lg text-sm hover:bg-lime-dark transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 mt-2 text-sm font-bold text-black transition-all rounded-lg bg-lime hover:bg-lime-dark disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? 'Signing in…' : 'Sign in →'}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-sm text-muted mt-6">
+        <p className="mt-6 text-sm text-center text-muted">
           Don't have an account?{' '}
-          <Link to="/register" className="text-lime hover:text-lime-dark font-medium">
+          <Link to="/register" className="font-medium text-lime hover:text-lime-dark">
             Start free trial
           </Link>
         </p>
