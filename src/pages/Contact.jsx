@@ -4,8 +4,8 @@ import { leadApi } from '../api/lead.api'
 import Select from '../components/ui/Select'
 
 const CONTACT_ITEMS = [
-  { icon: '📧', label: 'Email', value: 'hello@fitos.in' },
-  { icon: '📞', label: 'Phone / WhatsApp', value: '+91 98765 43210' },
+  { icon: '📧', label: 'Email', value: 'info@f8os.in' },
+  { icon: '📞', label: 'Phone / WhatsApp', value: '+91 82779 03670' },
   { icon: '🕐', label: 'Support hours', value: 'Mon – Sat, 9 AM to 7 PM IST' },
   { icon: '📍', label: 'Office', value: 'Bengaluru, Karnataka, India' },
 ]
@@ -110,7 +110,7 @@ export default function Contact() {
               <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Your name *" error={errors.name}>
-                    <input type="text" placeholder="Rahul Sharma" value={form.name} onChange={set('name')} className={fieldCls(errors.name)} />
+                    <input type="text" placeholder="Abdul Kalam" value={form.name} onChange={set('name')} className={fieldCls(errors.name)} />
                   </Field>
                   <Field label="Phone number *" error={errors.phone}>
                     <input type="tel" placeholder="+91 98765 43210" value={form.phone} onChange={set('phone')} className={fieldCls(errors.phone)} />
