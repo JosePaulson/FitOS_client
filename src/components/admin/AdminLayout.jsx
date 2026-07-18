@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSuperAdmin } from '../../hooks/useSuperAdmin'
+import RateLimitWarning from './RateLimitWarning'
 
 const NAV = [
   { to: '/dashboard',                icon: '📊', label: 'Dashboard',      roles: null },
@@ -10,6 +11,7 @@ const NAV = [
   { to: '/dashboard/billing',        icon: '💳', label: 'Billing',        roles: null },
   { to: '/dashboard/attendance',     icon: '📅', label: 'Attendance',     roles: null },
   { to: '/dashboard/plans',          icon: '📋', label: 'Plans',          roles: null },
+  { to: '/dashboard/pt-plans',       icon: '🎯', label: 'PT Plans',       roles: null },
   { to: '/dashboard/workout-plans',  icon: '🏋️', label: 'Workout & Diet', roles: null },
   { to: '/dashboard/pt-sessions',    icon: '💪', label: 'PT Sessions',    roles: ['owner', 'manager', 'trainer'] },
   { to: '/dashboard/equipment',      icon: '🏋️‍♂️', label: 'Equipment',      roles: null },
@@ -164,6 +166,9 @@ export default function AdminLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Global rate-limit warning — fires on any 429 anywhere in the app */}
+      <RateLimitWarning />
     </div>
   )
 }

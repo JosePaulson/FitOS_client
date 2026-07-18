@@ -171,6 +171,24 @@ export const planApi = {
   remove: (id) => api.delete(`/plans/${id}`),
 }
 
+/* ── PT Plans (catalog) — independent of membership plans, optional ────────── */
+export const ptPlanApi = {
+  list: () => api.get('/pt-plans'),
+  create: (data) => api.post('/pt-plans', data),
+  update: (id, data) => api.patch(`/pt-plans/${id}`, data),
+  remove: (id) => api.delete(`/pt-plans/${id}`),
+}
+
+/* ── PT Plan assignments (a member's actual purchase of a PT plan) ─────────── */
+export const memberPTPlanApi = {
+  list: (params = {}) => api.get('/member-pt-plans', { params }),
+  assign: (data) => api.post('/member-pt-plans', data),
+  logClass: (id) => api.patch(`/member-pt-plans/${id}/log-class`),
+  undoClass: (id) => api.patch(`/member-pt-plans/${id}/undo-class`),
+  update: (id, data) => api.patch(`/member-pt-plans/${id}`, data),
+  cancel: (id) => api.delete(`/member-pt-plans/${id}`),
+}
+
 /* ── Invoices ─────────────────────────────────────────────────────────────── */
 export const invoiceApi = {
   list: (params = {}) => api.get('/invoices', { params }),

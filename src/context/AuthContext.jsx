@@ -18,9 +18,16 @@ export function AuthProvider({ children }) {
         setUser(data.user)
         setGym(data.gym)
       })
-      .catch(() => {
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
+      .catch((err) => {
+        const status = err.response?.status
+        // Only a real auth rejection (401/403) means the session is
+        // actually invalid. A network failure, 429 rate-limit, or 5xx
+        // isn't proof of that — leave the stored tokens alone so the app
+        // can keep working / retry once things recover.
+        if (status === 401 || status === 403) {
+          localStorage.removeItem('accessToken')
+          localStorage.removeItem('refreshToken')
+        }
       })
       .finally(() => setLoading(false))
   }, [])

@@ -34,6 +34,18 @@ api.interceptors.response.use(
     const original = err.config
     const url = original?.url || ''
 
+    // Rate-limited — never a reason to log anyone out. Surface a warning
+    // instead (skip auth routes: login/register/refresh show their own
+    // inline error from the response message).
+    if (err.response?.status === 429 && !url.includes('/auth/')) {
+      const body = err.response?.data
+      const detailMessage = typeof body === 'string' ? body : body?.message
+      window.dispatchEvent(new CustomEvent('fitos:rate-limited', {
+        detail: { message: detailMessage || "You're doing that a bit too fast — please wait a moment and try again." },
+      }))
+      return Promise.reject(err)
+    }
+
     if (
       err.response?.status !== 401 ||
       original._retry ||

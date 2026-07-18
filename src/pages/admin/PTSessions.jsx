@@ -338,7 +338,22 @@ function fmtTime(d) {
 }
 function fmtISO(d) {
   if (!d) return ''
-  return new Date(d).toISOString().split('T')[0]
+  // Local date parts, NOT toISOString() — that gives the UTC date, which
+  // silently shifts to the previous day for any local time before ~5:30am
+  // IST, showing the wrong date in the picker on reopen/edit.
+  const dt = new Date(d)
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
+}
+function todayLocalISO() {
+  return fmtISO(new Date())
+}
+function fmtHHMM(d) {
+  if (!d) return ''
+  const dt = new Date(d)
+  return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`
+}
+function nowHHMM() {
+  return fmtHHMM(new Date())
 }
 
 export default function PTSessions() {
@@ -700,10 +715,17 @@ export default function PTSessions() {
 
 /* ── Session form modal ──────────────────────────────────────────────────── */
 function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOptions, workoutOptions, isTrainer, userId, onClose, onSaved }) {
+  // A member-booked session keeps the time they originally requested — staff
+  // can still reschedule the date, but shouldn't silently change the time
+  // they committed to. Purely trainer/admin-scheduled sessions get a normal
+  // editable time field that defaults to "right now".
+  const isMemberBooked = session?.bookingSource === 'member'
+
   const [form, setForm] = useState({
     memberId: session?.memberId?._id || '',
     trainerId: session?.trainerId?._id || '',
-    date: fmtISO(session?.date) || new Date().toISOString().split('T')[0],
+    date: fmtISO(session?.date) || todayLocalISO(),
+    time: session?.date ? fmtHHMM(session.date) : nowHHMM(),
     durationMinutes: session?.durationMinutes || 60,
     title: session?.title || '',
     notes: session?.notes || '',
@@ -738,8 +760,15 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
   async function save() {
     setError(''); setSaving(true)
     try {
+      // Member-booked sessions keep their original time-of-day even if the
+      // date is changed; everything else combines the date + time fields.
+      const time = isMemberBooked ? fmtHHMM(session.date) : (form.time || '00:00')
+      const combinedDate = new Date(`${form.date}T${time}:00`).toISOString()
+
+      const { time: _time, ...rest } = form
       const payload = {
-        ...form,
+        ...rest,
+        date: combinedDate,
         durationMinutes: form.durationMinutes ? Number(form.durationMinutes) : 60,
         exercises: form.exercises.filter((e) => e.name.trim()),
         bodyWeight: form.bodyWeight ? Number(form.bodyWeight) : undefined,
@@ -770,9 +799,18 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           <Field label="Date *">
             <input type="date" value={form.date} onChange={set('date')} className="field-input" />
+          </Field>
+          <Field label={isMemberBooked ? 'Time (booked by member)' : 'Time'}>
+            <input
+              type="time"
+              value={isMemberBooked ? fmtHHMM(session.date) : form.time}
+              onChange={set('time')}
+              disabled={isMemberBooked}
+              className="field-input disabled:opacity-60 disabled:cursor-not-allowed"
+            />
           </Field>
           <Field label="Session duration (min)">
             <input type="number" min="5" step="5" value={form.durationMinutes} onChange={set('durationMinutes')} className="field-input" placeholder="60" />
@@ -786,6 +824,11 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
             ]} />
           </Field>
         </div>
+        {isMemberBooked && (
+          <p className="text-[11px] text-muted -mt-2">
+            🔒 This session was booked by the member for this time — reschedule the date if needed, but the time they requested is kept.
+          </p>
+        )}
 
         <Field label="Session title / focus">
           <input type="text" value={form.title} onChange={set('title')} className="field-input" placeholder="e.g. Upper body strength" />

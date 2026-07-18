@@ -28,6 +28,7 @@ import Leads        from './pages/admin/Leads'
 import Billing      from './pages/admin/Billing'
 import Attendance   from './pages/admin/Attendance'
 import Plans        from './pages/admin/Plans'
+import PTPlans      from './pages/admin/PTPlans'
 import WorkoutPlans from './pages/admin/WorkoutPlans'
 import Staff        from './pages/admin/Staff'
 import Settings     from './pages/admin/Settings'
@@ -65,6 +66,7 @@ export default function App() {
         <Route path="billing"       element={<Billing />} />
         <Route path="attendance"    element={<Attendance />} />
         <Route path="plans"         element={<Plans />} />
+        <Route path="pt-plans"      element={<PTPlans />} />
         <Route path="workout-plans" element={<WorkoutPlans />} />
         <Route path="staff"         element={
           <PrivateRoute roles={['owner', 'manager']}><Staff /></PrivateRoute>

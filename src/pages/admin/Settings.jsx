@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { gymApi } from '../../api/index'
 import Select from '../../components/ui/Select'
 import { useAuth } from '../../context/AuthContext'
+import GymLocationMap from '../../components/admin/GymLocationMap'
 
 export default function Settings() {
   const { user } = useAuth()
@@ -27,6 +28,11 @@ export default function Settings() {
       currency:   'INR',
       timezone:   'Asia/Kolkata',
     },
+    location: {
+      lat: null,
+      lng: null,
+      radiusMeters: 50,
+    },
   })
 
   useEffect(() => {
@@ -45,6 +51,11 @@ export default function Settings() {
             brandColor: data.settings?.brandColor || '#C8F135',
             currency:   data.settings?.currency   || 'INR',
             timezone:   data.settings?.timezone   || 'Asia/Kolkata',
+          },
+          location: {
+            lat: data.location?.lat ?? null,
+            lng: data.location?.lng ?? null,
+            radiusMeters: data.location?.radiusMeters || 50,
           },
         })
       })
@@ -113,6 +124,26 @@ export default function Settings() {
           </div>
           <Field label="Address">
             <input type="text" value={form.address} onChange={set('address')} className="field-input" placeholder="Street, Area" />
+          </Field>
+        </Section>
+
+        {/* ── Location (geofenced self check-in) ── */}
+        <Section title="Location" icon="📍">
+          <div className="bg-lime/5 border border-lime/20 rounded-lg px-4 py-3 text-sm text-muted mb-1">
+            Drop a pin at your gym's entrance. Members within the radius below can self-check-in from the member portal — it prompts them automatically the moment they're in range and haven't marked attendance yet today.
+          </div>
+
+          <GymLocationMap
+            value={form.location.lat != null ? { lat: form.location.lat, lng: form.location.lng } : null}
+            onChange={({ lat, lng }) => setForm((v) => ({ ...v, location: { ...v.location, lat, lng } }))}
+          />
+
+          <Field label="Check-in radius (meters)" hint="How close a member's device must be to the pin to self-check-in. Default is 50m.">
+            <input
+              type="number" min="10" max="1000" value={form.location.radiusMeters}
+              onChange={(e) => setForm((v) => ({ ...v, location: { ...v.location, radiusMeters: Number(e.target.value) } }))}
+              className="field-input max-w-[160px]"
+            />
           </Field>
         </Section>
 
