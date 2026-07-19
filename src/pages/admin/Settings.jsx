@@ -33,6 +33,9 @@ export default function Settings() {
       lng: null,
       radiusMeters: 50,
     },
+    openingHours: {
+      monday: '', tuesday: '', wednesday: '', thursday: '', friday: '', saturday: '', sunday: '',
+    },
   })
 
   useEffect(() => {
@@ -56,6 +59,15 @@ export default function Settings() {
             lat: data.location?.lat ?? null,
             lng: data.location?.lng ?? null,
             radiusMeters: data.location?.radiusMeters || 50,
+          },
+          openingHours: {
+            monday: data.openingHours?.monday || '',
+            tuesday: data.openingHours?.tuesday || '',
+            wednesday: data.openingHours?.wednesday || '',
+            thursday: data.openingHours?.thursday || '',
+            friday: data.openingHours?.friday || '',
+            saturday: data.openingHours?.saturday || '',
+            sunday: data.openingHours?.sunday || '',
           },
         })
       })
@@ -145,6 +157,26 @@ export default function Settings() {
               className="field-input max-w-[160px]"
             />
           </Field>
+        </Section>
+
+        {/* ── Opening hours (shown to members) ── */}
+        <Section title="Opening hours" icon="🕐">
+          <p className="text-xs text-muted -mt-1 mb-1">
+            Shown to members in the app. Leave a day blank if you'd rather not display anything for it — it won't show as "Closed" automatically.
+          </p>
+          {[
+            ['monday', 'Monday'], ['tuesday', 'Tuesday'], ['wednesday', 'Wednesday'], ['thursday', 'Thursday'],
+            ['friday', 'Friday'], ['saturday', 'Saturday'], ['sunday', 'Sunday'],
+          ].map(([key, label]) => (
+            <div key={key} className="grid grid-cols-[100px_1fr] items-center gap-3">
+              <label className="text-xs text-muted">{label}</label>
+              <input
+                type="text" value={form.openingHours[key]}
+                onChange={(e) => setForm((v) => ({ ...v, openingHours: { ...v.openingHours, [key]: e.target.value } }))}
+                className="field-input" placeholder="e.g. 6:00 AM – 10:00 PM, or Closed"
+              />
+            </div>
+          ))}
         </Section>
 
         {/* ── Email sender ── */}

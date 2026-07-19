@@ -240,6 +240,15 @@ export const staffApi = {
   remove: (id) => api.delete(`/staff/${id}`),
 }
 
+/* ── Trainer availability (working hours + time-off) ────────────────────── */
+export const trainerAvailabilityApi = {
+  get: (trainerId) => api.get(`/trainer-availability/${trainerId}`),
+  update: (trainerId, data) => api.patch(`/trainer-availability/${trainerId}`, data),
+  timeOff: (trainerId) => api.get(`/trainer-availability/${trainerId}/time-off`),
+  addTimeOff: (trainerId, data) => api.post(`/trainer-availability/${trainerId}/time-off`, data),
+  removeTimeOff: (trainerId, id) => api.delete(`/trainer-availability/${trainerId}/time-off/${id}`),
+}
+
 /* ── SaaS Admin ───────────────────────────────────────────────────────────── */
 export const saasAdminApi = {
   overview: () => api.get('/saas-admin/overview'),
