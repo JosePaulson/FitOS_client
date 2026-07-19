@@ -216,6 +216,21 @@ const DAYS = [
   ['friday', 'Fri'], ['saturday', 'Sat'], ['sunday', 'Sun'],
 ]
 
+// Ensures every day has a `shifts` array to work with in the UI, even for
+// availability docs saved before multi-shift support (which had a single
+// start/end per day instead).
+function normalizeWeeklyHours(weeklyHours) {
+  const out = {}
+  for (const [key] of DAYS) {
+    const d = weeklyHours?.[key] || {}
+    const shifts = Array.isArray(d.shifts) && d.shifts.length > 0
+      ? d.shifts
+      : (d.start && d.end ? [{ start: d.start, end: d.end }] : [{ start: '06:00', end: '20:00' }])
+    out[key] = { isOff: !!d.isOff, shifts }
+  }
+  return out
+}
+
 /** Weekly working hours + specific-day time-off for one trainer — gates what members can book. */
 function TrainerAvailabilityModal({ trainer, onClose }) {
   const [loading, setLoading] = useState(true)
@@ -236,7 +251,7 @@ function TrainerAvailabilityModal({ trainer, onClose }) {
       trainerAvailabilityApi.timeOff(trainer._id),
     ])
       .then(([availRes, offRes]) => {
-        setWeeklyHours(availRes.data.weeklyHours)
+        setWeeklyHours(normalizeWeeklyHours(availRes.data.weeklyHours))
         setSlotDurationMinutes(availRes.data.slotDurationMinutes || 60)
         setTimeOff(offRes.data || [])
       })
@@ -246,6 +261,20 @@ function TrainerAvailabilityModal({ trainer, onClose }) {
 
   function updateDay(day, field, value) {
     setWeeklyHours((v) => ({ ...v, [day]: { ...v[day], [field]: value } }))
+  }
+
+  function updateShift(day, index, field, value) {
+    setWeeklyHours((v) => {
+      const shifts = [...v[day].shifts]
+      shifts[index] = { ...shifts[index], [field]: value }
+      return { ...v, [day]: { ...v[day], shifts } }
+    })
+  }
+  function addShift(day) {
+    setWeeklyHours((v) => ({ ...v, [day]: { ...v[day], shifts: [...v[day].shifts, { start: '17:00', end: '20:00' }] } }))
+  }
+  function removeShift(day, index) {
+    setWeeklyHours((v) => ({ ...v, [day]: { ...v[day], shifts: v[day].shifts.filter((_, i) => i !== index) } }))
   }
 
   async function save() {
@@ -293,23 +322,39 @@ function TrainerAvailabilityModal({ trainer, onClose }) {
             {error && <p className="px-3 py-2 mb-4 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/20">{error}</p>}
 
             {/* Weekly hours */}
-            <div className="flex flex-col gap-2 mb-3">
+            <div className="flex flex-col gap-3 mb-3">
               {DAYS.map(([key, label]) => {
-                const d = weeklyHours[key] || {}
+                const d = weeklyHours[key] || { isOff: false, shifts: [] }
                 return (
-                  <div key={key} className="grid grid-cols-[50px_auto_1fr_auto_1fr] items-center gap-2">
-                    <span className="text-xs font-semibold text-muted">{label}</span>
-                    <label className="flex items-center gap-1.5 text-xs text-muted">
-                      <input type="checkbox" checked={!d.isOff} onChange={(e) => updateDay(key, 'isOff', !e.target.checked)} />
-                      Open
-                    </label>
-                    <input type="time" disabled={d.isOff} value={d.start || '06:00'}
-                      onChange={(e) => updateDay(key, 'start', e.target.value)}
-                      className="field-input disabled:opacity-40" />
-                    <span className="text-xs text-center text-muted">–</span>
-                    <input type="time" disabled={d.isOff} value={d.end || '20:00'}
-                      onChange={(e) => updateDay(key, 'end', e.target.value)}
-                      className="field-input disabled:opacity-40" />
+                  <div key={key} className="pb-3 border-b border-white/[0.06] last:border-0">
+                    <div className="flex items-center gap-3 mb-1.5">
+                      <span className="text-xs font-semibold text-muted w-[40px]">{label}</span>
+                      <label className="flex items-center gap-1.5 text-xs text-muted">
+                        <input type="checkbox" checked={!d.isOff} onChange={(e) => updateDay(key, 'isOff', !e.target.checked)} />
+                        Open
+                      </label>
+                      {!d.isOff && (
+                        <button onClick={() => addShift(key)} className="text-xs font-semibold text-lime hover:text-lime-dark ml-auto">
+                          + Add shift
+                        </button>
+                      )}
+                    </div>
+                    {!d.isOff && (
+                      <div className="flex flex-col gap-1.5 pl-[52px]">
+                        {d.shifts.map((shift, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <input type="time" value={shift.start} onChange={(e) => updateShift(key, i, 'start', e.target.value)}
+                              className="field-input flex-1" />
+                            <span className="text-xs text-muted">–</span>
+                            <input type="time" value={shift.end} onChange={(e) => updateShift(key, i, 'end', e.target.value)}
+                              className="field-input flex-1" />
+                            {d.shifts.length > 1 && (
+                              <button onClick={() => removeShift(key, i)} className="text-xs text-red-400/70 hover:text-red-400 px-1">×</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
               })}

@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import UpdateChecker from './components/UpdateChecker'
 
 // Layouts
 import { Outlet }        from 'react-router-dom'
@@ -43,7 +44,9 @@ import SALeads    from './pages/superadmin/Leads'
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <UpdateChecker />
+      <Routes>
       {/* ── Public routes ── */}
       <Route element={<PublicLayout />}>
         <Route path="/"        element={<Home />} />
@@ -93,7 +96,8 @@ export default function App() {
 
       {/* ── 404 ── */}
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </>
   )
 }
 
