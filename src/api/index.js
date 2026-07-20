@@ -159,7 +159,7 @@ export const memberApi = {
   get: (id) => api.get(`/members/${id}`),
   create: (data) => api.post('/members', data),
   update: (id, data) => api.patch(`/members/${id}`, data),
-  renew: (id, planId) => api.post(`/members/${id}/renew`, { planId }),
+  renew: (id, payload) => api.post(`/members/${id}/renew`, payload),
   remove: (id) => api.delete(`/members/${id}`),
 }
 
