@@ -10,6 +10,7 @@ import SuperAdminLayout  from './components/admin/SuperAdminLayout'
 
 // Guards
 import PrivateRoute      from './components/ui/PrivateRoute'
+import PublicRoute       from './components/ui/PublicRoute'
 import SuperAdminRoute   from './components/ui/SuperAdminRoute'
 
 // Public pages
@@ -49,14 +50,14 @@ export default function App() {
       <Routes>
       {/* ── Public routes ── */}
       <Route element={<PublicLayout />}>
-        <Route path="/"        element={<Home />} />
+        <Route path="/"        element={<PublicRoute><Home /></PublicRoute>} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/contact" element={<Contact />} />
       </Route>
 
       {/* ── Auth routes ── */}
-      <Route path="/login"    element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
       {/* ── Gym admin dashboard ── */}
       <Route

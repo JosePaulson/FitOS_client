@@ -186,6 +186,7 @@ function AssignmentsTable({ assignments, onLogClass, onUndoClass, onCancel }) {
   }
   return (
     <div className="overflow-hidden border rounded-xl border-white/[0.08]">
+      <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead className="bg-white/[0.03] text-muted text-xs uppercase tracking-wide">
           <tr>
@@ -257,6 +258,7 @@ function AssignmentsTable({ assignments, onLogClass, onUndoClass, onCancel }) {
           })}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }

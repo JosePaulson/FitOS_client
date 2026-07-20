@@ -71,6 +71,7 @@ export default function Staff() {
         </div>
       ) : (
         <div className="bg-card border border-white/[0.08] rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/[0.06] text-left">
@@ -147,6 +148,7 @@ export default function Staff() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
