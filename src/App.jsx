@@ -37,6 +37,8 @@ import Settings     from './pages/admin/Settings'
 import PTSessions   from './pages/admin/PTSessions'
 import Equipment       from './pages/admin/Equipment'
 import WorkoutLibrary  from './pages/admin/WorkoutLibrary'
+import Complaints      from './pages/admin/Complaints'
+import StaffRatings    from './pages/admin/StaffRatings'
 
 // Super admin pages
 import SAOverview from './pages/superadmin/Overview'
@@ -83,6 +85,12 @@ export default function App() {
         } />
         <Route path="equipment"        element={<Equipment />} />
         <Route path="workout-library"  element={<WorkoutLibrary />} />
+        <Route path="complaints"       element={
+          <PrivateRoute roles={['owner', 'manager']}><Complaints /></PrivateRoute>
+        } />
+        <Route path="staff-ratings"    element={
+          <PrivateRoute roles={['owner']}><StaffRatings /></PrivateRoute>
+        } />
       </Route>
 
       {/* ── Super admin console ── */}

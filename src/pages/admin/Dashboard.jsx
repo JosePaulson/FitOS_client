@@ -54,6 +54,9 @@ export default function Dashboard() {
         <StatCard icon="🔔"  label="Expiring in 30 days" value={fmt(data?.members?.expiringIn30)} loading={loading} />
         <StatCard icon="💸"  label="Pending amount"      value={fmtRupee(data?.revenue?.pendingAmount)} loading={loading} sub={`${fmt(data?.revenue?.pendingCount)} invoices`} />
         <StatCard icon="🆕"  label="New this month"      value={fmt(data?.members?.newThisMonth)}  loading={loading} />
+        <Link to="/dashboard/complaints" className="block">
+          <StatCard icon="📮"  label="Open complaints/requests" value={fmt(data?.complaints?.open)}  loading={loading} sub="Tap to review" />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

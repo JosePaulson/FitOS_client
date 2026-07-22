@@ -159,7 +159,7 @@ export const memberApi = {
   get: (id) => api.get(`/members/${id}`),
   create: (data) => api.post('/members', data),
   update: (id, data) => api.patch(`/members/${id}`, data),
-  renew: (id, payload) => api.post(`/members/${id}/renew`, payload),
+  renew: (id, planId, startDate) => api.post(`/members/${id}/renew`, { planId, startDate }),
   remove: (id) => api.delete(`/members/${id}`),
 }
 
@@ -330,4 +330,17 @@ function toWorkoutFormData(data, files) {
   if (files.image) fd.append('image', files.image)
   if (files.video) fd.append('video', files.video)
   return fd
+}
+
+/* ── Complaints & requests (admin — owner/manager) ────────────────────────── */
+export const complaintApi = {
+  list: (params = {}) => api.get('/complaints', { params }),
+  get: (id) => api.get(`/complaints/${id}`),
+  updateStatus: (id, data) => api.patch(`/complaints/${id}`, data),
+  respond: (id, text) => api.post(`/complaints/${id}/respond`, { text }),
+}
+
+/* ── Staff ratings & remarks (admin — owner only) ─────────────────────────── */
+export const staffRatingApi = {
+  list: (params = {}) => api.get('/staff-ratings', { params }),
 }

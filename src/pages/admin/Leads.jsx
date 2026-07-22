@@ -187,7 +187,10 @@ export default function Leads() {
                 </div>
 
                 <div className="flex flex-col gap-1 text-xs text-muted">
-                  <span>📞 {lead.phone}</span>
+                  <span className="flex items-center gap-2">
+                    📞 {lead.phone}
+                    <ContactButtons phone={lead.phone} />
+                  </span>
                   {lead.email && <span>✉️ {lead.email}</span>}
                   {lead.memberRange && <span>👥 {lead.memberRange} members</span>}
                   {lead.interest && <span>💡 {lead.interest.replace(/-/g, ' ')}</span>}
@@ -360,5 +363,46 @@ function Field({ label, children }) {
       <label className="text-xs font-medium text-muted">{label}</label>
       {children}
     </div>
+  )
+}
+
+/* ── Click-to-call / WhatsApp ────────────────────────────────────────────── */
+
+// Strips everything but digits and a leading +, and assumes a bare 10-digit
+// Indian mobile number (no country code) is +91 — matches how numbers are
+// entered elsewhere in this app (e.g. "+91 98765 43210" placeholders).
+export function normalizePhone(raw) {
+  if (!raw) return ''
+  let cleaned = raw.replace(/[^\d+]/g, '')
+  if (!cleaned.startsWith('+')) {
+    cleaned = cleaned.length === 10 ? `+91${cleaned}` : `+${cleaned}`
+  }
+  return cleaned
+}
+
+export function ContactButtons({ phone, size = 'sm' }) {
+  const normalized = normalizePhone(phone)
+  if (!normalized) return null
+  const waNumber = normalized.replace('+', '')
+  const dims = size === 'sm' ? 'w-6 h-6 text-xs' : 'w-8 h-8 text-sm'
+
+  return (
+    <span className="inline-flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+      <a
+        href={`tel:${normalized}`}
+        title={`Call ${phone}`}
+        className={`inline-flex items-center justify-center ${dims} rounded-full bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 transition-all`}
+      >
+        📞
+      </a>
+      <a
+        href={`https://wa.me/${waNumber}`}
+        target="_blank" rel="noopener noreferrer"
+        title={`WhatsApp ${phone}`}
+        className={`inline-flex items-center justify-center ${dims} rounded-full bg-green-500/10 text-green-400 hover:bg-green-500/20 hover:text-green-300 transition-all`}
+      >
+        💬
+      </a>
+    </span>
   )
 }

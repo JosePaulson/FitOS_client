@@ -540,23 +540,12 @@ const STATUS_COLORS = {
 // '' — Mongoose will try to cast '' to Date/Number and throw. Strip them.
 function cleanMemberPayload(form) {
   const payload = { ...form }
-    ;['dob', 'age', 'gender', 'height', 'email', 'healthNotes', 'currentPlanId', 'membershipStartDate', 'membershipExpiryDate'].forEach((k) => {
+    ;['dob', 'age', 'gender', 'height', 'email', 'healthNotes', 'membershipStartDate', 'membershipExpiryDate', 'currentPlanId'].forEach((k) => {
       if (payload[k] === '') delete payload[k]
     })
   if (payload.age !== undefined) payload.age = Number(payload.age)
   if (payload.height !== undefined) payload.height = Number(payload.height)
   return payload
-}
-
-// Plan option label — shows validity in days or months, whichever the plan uses
-function planLabel(p) {
-  const validity = p.durationLabel || `${p.durationDays}d`
-  return `${p.name} — ₹${p.price} incl. GST / ${validity}`
-}
-
-// Today's date as yyyy-mm-dd, for defaulting <input type="date"> fields
-function todayStr() {
-  return new Date().toISOString().slice(0, 10)
 }
 
 export default function Members() {
@@ -833,9 +822,9 @@ export default function Members() {
         <Modal title={`Renew — ${selected.name}`} onClose={() => setSelected(null)}>
           <RenewForm
             member={selected} plans={plans}
-            onSubmit={async (payload) => {
+            onSubmit={async (planId, startDate) => {
               try {
-                await memberApi.renew(selected._id, payload)
+                await memberApi.renew(selected._id, planId, startDate || undefined)
                 setSelected(null)
                 load()
               } catch (err) {
@@ -854,7 +843,7 @@ export default function Members() {
 
 function Modal({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-y-auto bg-black/70">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70">
       <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7 relative">
         <button onClick={onClose} className="absolute text-xl leading-none top-4 right-4 text-muted hover:text-cream">×</button>
         <h2 className="mb-5 text-lg font-bold">{title}</h2>
@@ -864,10 +853,18 @@ function Modal({ title, onClose, children }) {
   )
 }
 
+// Human-readable plan option label, respecting the new days/months duration model.
+function planLabel(p) {
+  const duration = p.durationUnit === 'months'
+    ? `${p.durationValue ?? Math.round((p.durationDays || 0) / 30)}mo`
+    : `${p.durationValue ?? p.durationDays}d`
+  return `${p.name} — ₹${p.price} incl. GST / ${duration}`
+}
+
 function AddMemberForm({ plans, error, loading, onSubmit, onClose }) {
   const [form, setForm] = useState({
     name: '', phone: '', email: '', planId: '', source: 'walk-in',
-    dob: '', age: '', gender: '', height: '', startDate: todayStr(),
+    dob: '', age: '', gender: '', height: '', membershipStartDate: '',
   })
   const set = (f) => (e) => setForm((v) => ({ ...v, [f]: e.target.value }))
 
@@ -886,8 +883,8 @@ function AddMemberForm({ plans, error, loading, onSubmit, onClose }) {
         />
       </Field>
       <Field label="Membership start date">
-        <input type="date" value={form.startDate} onChange={set('startDate')} className="field-input" />
-        <p className="text-[11px] text-muted mt-1">Defaults to today — set a past or future date if needed (e.g. back-dating a join, or starting on a future date).</p>
+        <input type="date" value={form.membershipStartDate} onChange={set('membershipStartDate')} className="field-input" />
+        <p className="text-[11px] mt-1 text-muted">Defaults to today. Can be set to any date — past or future.</p>
       </Field>
       <Field label="Source">
         <Select
@@ -935,43 +932,29 @@ function EditMemberForm({ member, plans, error, loading, onSubmit, onClose }) {
     gender: member.gender || '',
     height: member.height ?? '',
     healthNotes: member.healthNotes || '',
-    currentPlanId: member.currentPlanId?._id || '',
     membershipStartDate: member.membershipStartDate ? member.membershipStartDate.slice(0, 10) : '',
     membershipExpiryDate: member.membershipExpiryDate ? member.membershipExpiryDate.slice(0, 10) : '',
+    currentPlanId: member.currentPlanId?._id || '',
   })
   const set = (f) => (e) => setForm((v) => ({ ...v, [f]: e.target.value }))
-  const planChanged = form.currentPlanId !== (member.currentPlanId?._id || '')
-  const originalExpiry = member.membershipExpiryDate ? member.membershipExpiryDate.slice(0, 10) : ''
-
-  function handleSubmit(e) {
-    e.preventDefault()
-    const payload = { ...form }
-    // Plan changed but the admin didn't also hand-edit the expiry date —
-    // let the backend recalculate it from the new plan's validity instead
-    // of keeping the old plan's stale expiry.
-    if (planChanged && payload.membershipExpiryDate === originalExpiry) {
-      delete payload.membershipExpiryDate
-    }
-    onSubmit(payload)
-  }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(form) }} className="flex flex-col gap-4">
       {error && <p className="px-3 py-2 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/20">{error}</p>}
       <Field label="Full name *"><input type="text" value={form.name} onChange={set('name')} className="field-input" /></Field>
       <Field label="Phone *"><input type="tel" value={form.phone} onChange={set('phone')} className="field-input" /></Field>
       <Field label="Email"><input type="email" value={form.email} onChange={set('email')} className="field-input" placeholder="optional" /></Field>
-
-      {plans && (
-        <Field label="Membership plan">
-          <Select
-            value={form.currentPlanId}
-            onChange={(val) => setForm((v) => ({ ...v, currentPlanId: val }))}
-            options={plans.map((p) => ({ value: p._id, label: planLabel(p) }))}
-            placeholder="Select plan"
-          />
-        </Field>
-      )}
+      <Field label="Membership plan">
+        <Select
+          value={form.currentPlanId}
+          onChange={(val) => setForm((v) => ({ ...v, currentPlanId: val }))}
+          options={plans.map((p) => ({ value: p._id, label: planLabel(p) }))}
+          placeholder="Select plan"
+        />
+        <p className="text-[11px] mt-1 text-muted">
+          Reassigns the plan directly without changing the dates below. To extend validity, use Renew instead.
+        </p>
+      </Field>
       <div className="grid grid-cols-2 gap-4">
         <Field label="Membership start date">
           <input type="date" value={form.membershipStartDate} onChange={set('membershipStartDate')} className="field-input" />
@@ -980,13 +963,7 @@ function EditMemberForm({ member, plans, error, loading, onSubmit, onClose }) {
           <input type="date" value={form.membershipExpiryDate} onChange={set('membershipExpiryDate')} className="field-input" />
         </Field>
       </div>
-      {planChanged && (
-        <p className="text-[11px] text-muted -mt-2">
-          Plan changed — expiry will be recalculated from the start date above using the new plan's validity, unless you also set an expiry date yourself.
-        </p>
-      )}
-      <p className="text-[11px] text-muted -mt-2">Both dates can be set to any date — past or future.</p>
-
+      <p className="text-[11px] -mt-2 text-muted">Both dates can be corrected to any date — past or future — independent of the plan's default validity.</p>
       <div className="grid grid-cols-2 gap-4">
         <Field label="Date of birth"><input type="date" value={form.dob} onChange={set('dob')} className="field-input" /></Field>
         <Field label="Age (if DOB unknown)"><input type="number" min="0" value={form.age} onChange={set('age')} className="field-input" placeholder="optional" /></Field>
@@ -1017,13 +994,7 @@ function EditMemberForm({ member, plans, error, loading, onSubmit, onClose }) {
 
 function RenewForm({ member, plans, onSubmit, onClose }) {
   const [planId, setPlanId] = useState(member.currentPlanId?._id || '')
-  // Default renewal date: today. Admins can override to back-date or
-  // future-date the renewal — e.g. starting from the member's current
-  // expiry, or a date they actually paid on.
-  const [startDate, setStartDate] = useState(todayStr())
-  const useCurrentExpiry = member.membershipStatus === 'active'
-    && member.membershipExpiryDate && new Date(member.membershipExpiryDate) > new Date()
-
+  const [startDate, setStartDate] = useState('')
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted">
@@ -1034,35 +1005,48 @@ function RenewForm({ member, plans, onSubmit, onClose }) {
             : 'Not set'}
         </span>
       </p>
-      <Field label="Select plan">
-        <Select
-          value={planId}
-          onChange={setPlanId}
-          options={plans.map((p) => ({ value: p._id, label: planLabel(p) }))}
-          placeholder="Choose plan"
-        />
+
+      <Field label={`Select a plan (${plans.length} available)`}>
+        <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
+          {plans.length === 0 ? (
+            <p className="text-sm text-muted">No active plans found. Create one under Plans first.</p>
+          ) : plans.map((p) => {
+            const duration = p.durationUnit === 'months'
+              ? `${p.durationValue ?? Math.round((p.durationDays || 0) / 30)} month${p.durationValue === 1 ? '' : 's'}`
+              : `${p.durationValue ?? p.durationDays} days`
+            const selected = planId === p._id
+            return (
+              <button
+                key={p._id}
+                type="button"
+                onClick={() => setPlanId(p._id)}
+                className={`flex items-center justify-between px-4 py-3 rounded-lg border text-left transition-all ${
+                  selected ? 'border-lime bg-lime/10' : 'border-white/10 hover:border-white/25'
+                }`}
+              >
+                <div>
+                  <p className="text-sm font-semibold">{p.name}</p>
+                  <p className="text-xs text-muted">{duration}{p.sessionsIncluded > 0 && ` · ${p.sessionsIncluded} PT sessions`}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold">₹{p.price}</span>
+                  {selected && <span className="text-lime">✓</span>}
+                </div>
+              </button>
+            )
+          })}
+        </div>
       </Field>
-      <Field label="Renew from date">
+
+      <Field label="Renew from date (optional)">
         <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="field-input" />
-        <p className="text-[11px] text-muted mt-1">
-          {useCurrentExpiry
-            ? `Defaults to today. Leave as-is to stack the new validity on top of the current expiry (${new Date(member.membershipExpiryDate).toLocaleDateString('en-IN')}) — or pick any past or future date to override.`
-            : 'Defaults to today — pick any past or future date if needed.'}
+        <p className="text-[11px] mt-1 text-muted">
+          Leave blank to extend from the current expiry (or today, if already lapsed). Set any date — past or future — to override.
         </p>
       </Field>
       <div className="flex gap-3 mt-1">
         <button onClick={onClose} className="flex-1 border border-white/10 text-muted py-2.5 rounded-lg text-sm hover:text-cream transition-all">Cancel</button>
-        <button
-          onClick={() => onSubmit({
-            planId,
-            // Only send startDate when the admin picked something other than
-            // today, so the backend's "stack on current expiry" default still
-            // applies for the common case.
-            ...(startDate !== todayStr() ? { startDate } : {}),
-          })}
-          disabled={!planId}
-          className="flex-[2] bg-lime text-black font-bold py-2.5 rounded-lg text-sm hover:bg-lime-dark transition-all disabled:opacity-60"
-        >
+        <button onClick={() => onSubmit(planId, startDate)} disabled={!planId} className="flex-[2] bg-lime text-black font-bold py-2.5 rounded-lg text-sm hover:bg-lime-dark transition-all disabled:opacity-60">
           Renew membership
         </button>
       </div>

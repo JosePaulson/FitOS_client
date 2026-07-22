@@ -16,6 +16,8 @@ const NAV = [
   { to: '/dashboard/pt-sessions',    icon: '💪', label: 'PT Sessions',    roles: ['owner', 'manager', 'trainer'] },
   { to: '/dashboard/equipment',      icon: '🏋️‍♂️', label: 'Equipment',      roles: null },
   { to: '/dashboard/workout-library',icon: '📚', label: 'Workout Library',roles: null },
+  { to: '/dashboard/complaints',      icon: '📮', label: 'Complaints',     roles: ['owner', 'manager'] },
+  { to: '/dashboard/staff-ratings',   icon: '⭐', label: 'Staff Ratings',  roles: ['owner'] },
   { to: '/dashboard/staff',          icon: '👤', label: 'Staff',          roles: ['owner', 'manager'] },
   { to: '/dashboard/settings',       icon: '⚙️', label: 'Settings',       roles: ['owner'] },
 ]

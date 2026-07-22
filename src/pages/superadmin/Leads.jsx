@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { saasAdminApi } from '../../api/index'
 import Select from '../../components/ui/Select'
 import { leadApi } from '../../api/lead.api'
+import { ContactButtons } from '../admin/Leads'
 
 const STAGES = [
   { key: 'new', label: 'New', dot: 'bg-blue-400' },
@@ -125,7 +126,10 @@ export default function SALeads() {
                     <td className="px-4 py-3.5 text-muted text-xs max-w-[120px] truncate">{lead.gymName || '—'}</td>
                     <td className="px-4 py-3.5">
                       <div className="text-xs">
-                        <div>{lead.phone}</div>
+                        <div className="flex items-center gap-1.5">
+                          {lead.phone}
+                          <ContactButtons phone={lead.phone} />
+                        </div>
                         {lead.email && <div className="text-muted truncate max-w-[140px]">{lead.email}</div>}
                       </div>
                     </td>

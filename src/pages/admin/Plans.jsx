@@ -95,7 +95,9 @@ export default function Plans() {
                 <span>GST ({plan.taxRate}%): ₹{plan.taxAmount?.toLocaleString('en-IN')}</span>
               </div>
               <p className="mb-3 text-sm text-muted">
-                {plan.durationLabel || `${plan.durationDays} days`}
+                {plan.durationUnit === 'months'
+                  ? `${plan.durationValue} month${plan.durationValue === 1 ? '' : 's'}`
+                  : `${plan.durationValue ?? plan.durationDays} days`}
                 {plan.sessionsIncluded > 0 && ` · ${plan.sessionsIncluded} PT sessions`}
               </p>
               {plan.description && (
@@ -133,8 +135,8 @@ function PlanForm({ initial, error, loading, onSubmit, onClose }) {
   const [form, setForm] = useState({
     name: initial?.name || '',
     description: initial?.description || '',
-    durationType: initial?.durationType || 'days',
-    durationValue: initial?.durationValue || (initial?.durationType === 'months' ? 1 : 30),
+    durationValue: initial?.durationValue || (initial?.durationDays ?? 30),
+    durationUnit: initial?.durationUnit || 'days',
     price: initial?.price || '',
     taxRate: initial?.taxRate ?? 18,
     sessionsIncluded: initial?.sessionsIncluded || 0,
@@ -154,43 +156,45 @@ function PlanForm({ initial, error, loading, onSubmit, onClose }) {
       <Field label="Plan name *">
         <input type="text" value={form.name} onChange={set('name')} className="field-input" placeholder="Monthly Premium" />
       </Field>
-      <Field label="Plan validity *">
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            type="number" min="1" value={form.durationValue}
-            onChange={set('durationValue')} className="field-input"
-            placeholder="e.g. 30"
-          />
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Validity *">
+          <div className="flex gap-2">
+            <input
+              type="number" min="1" value={form.durationValue}
+              onChange={set('durationValue')}
+              className="w-full field-input"
+            />
+            <Select
+              value={form.durationUnit}
+              onChange={(val) => setForm((v) => ({ ...v, durationUnit: val }))}
+              options={[
+                { value: 'days', label: 'Days' },
+                { value: 'months', label: 'Months' },
+              ]}
+              className="w-32 shrink-0"
+            />
+          </div>
+          {form.durationUnit === 'months' && form.durationValue > 0 && (
+            <p className="text-[11px] mt-1 text-muted">
+              ≈ {Math.round(form.durationValue * 30.4375)} days — actual expiry is calculated from the exact calendar months when assigned to a member.
+            </p>
+          )}
+        </Field>
+        <Field label="GST rate (%)">
           <Select
-            value={form.durationType}
-            onChange={(val) => setForm((v) => ({ ...v, durationType: val }))}
+            value={String(form.taxRate)}
+            onChange={(val) => setForm((v) => ({ ...v, taxRate: val }))}
             options={[
-              { value: 'days', label: 'Days' },
-              { value: 'months', label: 'Months' },
+              { value: '0', label: '0% (exempt)' },
+              { value: '5', label: '5%' },
+              { value: '12', label: '12%' },
+              { value: '18', label: '18% (standard)' },
+              { value: '28', label: '28%' },
             ]}
-            placeholder="Unit"
+            placeholder="Select GST rate"
           />
-        </div>
-        {form.durationType === 'months' && (
-          <p className="text-[11px] text-muted mt-1.5">
-            Validity is calculated from the actual calendar months a member's plan runs through — so a member starting on the 31st of a month rolls to the last day of a shorter month, rather than always adding a flat 30 days.
-          </p>
-        )}
-      </Field>
-      <Field label="GST rate (%)">
-        <Select
-          value={String(form.taxRate)}
-          onChange={(val) => setForm((v) => ({ ...v, taxRate: val }))}
-          options={[
-            { value: '0', label: '0% (exempt)' },
-            { value: '5', label: '5%' },
-            { value: '12', label: '12%' },
-            { value: '18', label: '18% (standard)' },
-            { value: '28', label: '28%' },
-          ]}
-          placeholder="Select GST rate"
-        />
-      </Field>
+        </Field>
+      </div>
       <Field label="Final price member pays (₹, GST inclusive) *">
         <input type="number" min="0" value={form.price} onChange={set('price')} className="field-input" placeholder="1500" />
         {priceNum > 0 && (

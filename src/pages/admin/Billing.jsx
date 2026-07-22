@@ -11,7 +11,7 @@ const STATUS_STYLES = {
   refunded: 'bg-blue-400/10 text-blue-400',
 }
 
-const PAYMENT_METHODS = ['cash', 'upi', 'card', 'netbanking', 'other']
+const PAYMENT_METHODS = ['cash', 'upi', 'card', 'netbanking', 'wallet', 'other']
 
 export default function Billing() {
   const [invoices, setInvoices] = useState([])
@@ -22,6 +22,7 @@ export default function Billing() {
   const [loading, setLoading] = useState(true)
   const [paying, setPaying] = useState(null)   // invoice being paid
   const [method, setMethod] = useState('cash')
+  const [resending, setResending] = useState(null) // invoice email being resent
 
   const LIMIT = 15
 
@@ -147,7 +148,7 @@ export default function Billing() {
                 <tr key={inv._id} className="hover:bg-white/[0.02] transition-colors">
                   <td className="px-5 py-3.5 font-mono text-xs text-muted">{inv.invoiceNumber}</td>
                   <td className="px-5 py-3.5 font-medium">{inv.memberId?.name || '—'}</td>
-                  <td className="px-5 py-3.5 text-muted text-xs">{inv.planId?.name || '—'}</td>
+                  <td className="px-5 py-3.5 text-muted text-xs">{inv.planId?.name || inv.ptPlanId?.name || '—'}</td>
                   <td className="px-5 py-3.5">
                     <div className="font-semibold">₹{inv.totalAmount?.toLocaleString('en-IN')}</div>
                     {inv.taxAmount > 0 && <div className="text-[10px] text-muted">incl. ₹{inv.taxAmount?.toLocaleString('en-IN')} GST</div>}
@@ -156,6 +157,9 @@ export default function Billing() {
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLES[inv.status] || ''}`}>
                       {inv.status}
                     </span>
+                    {inv.razorpayPaymentId && (
+                      <span className="ml-1.5 text-[10px] text-muted" title={`Paid online via Razorpay${inv.paymentMethod ? ` (${inv.paymentMethod})` : ''}`}>🌐</span>
+                    )}
                   </td>
                   <td className="px-5 py-3.5 text-muted text-xs">
                     {new Date(inv.createdAt).toLocaleDateString('en-IN')}
