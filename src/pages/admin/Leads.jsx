@@ -243,7 +243,7 @@ export default function Leads() {
       {/* Note modal */}
       {noteTarget && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4">
-          <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7">
+          <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7 max-h-[90vh] overflow-y-auto">
             <h2 className="font-bold text-lg mb-1">Add note</h2>
             <p className="text-muted text-sm mb-5">For lead: <span className="text-cream">{noteTarget.name}</span></p>
 
@@ -302,7 +302,7 @@ function AddLeadModal({ onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4">
-      <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7 relative">
+      <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7 relative max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-4 right-5 text-muted hover:text-cream text-2xl leading-none">×</button>
         <h2 className="font-bold text-lg mb-1">Add a lead</h2>
         <p className="text-muted text-sm mb-5">

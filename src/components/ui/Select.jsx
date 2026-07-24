@@ -167,6 +167,14 @@ export default function Select({
       borderRadius: '0 0.375rem 0.375rem 0',
       '&:hover': { background: 'rgba(200,241,53,0.25)', color: '#C8F135' },
     }),
+
+    // Rendered via menuPortalTarget (see below) — the portal itself escapes
+    // any ancestor's overflow/scroll clipping, but still needs a z-index
+    // above modal overlays (z-50) so it isn't tucked behind them.
+    menuPortal: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
   }
 
   function handleChange(opt) {
@@ -190,6 +198,11 @@ export default function Select({
         styles={customStyles}
         classNamePrefix="rs"
         unstyled={false}
+        // Escapes any scrollable/overflow-hidden ancestor (e.g. a modal
+        // body) by mounting the menu on <body> instead of inline — fixes
+        // dropdowns getting visually clipped inside modals.
+        menuPortalTarget={document.body}
+        menuPosition="fixed"
       />
     </div>
   )

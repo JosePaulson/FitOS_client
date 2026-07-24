@@ -190,7 +190,7 @@ function EditGymModal({ gym, saving, error, onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70">
-      <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7">
+      <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7 relative max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute text-2xl leading-none top-4 right-5 text-muted hover:text-cream">×</button>
         <h2 className="mb-1 text-lg font-bold">Edit gym subscription</h2>
         <p className="mb-5 text-sm truncate text-muted">{gym.name} · {gym.subdomain}.fitos.in</p>

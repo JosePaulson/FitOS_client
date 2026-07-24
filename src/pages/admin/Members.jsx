@@ -844,7 +844,7 @@ export default function Members() {
 function Modal({ title, onClose, children }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70">
-      <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7 relative">
+      <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7 relative max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute text-xl leading-none top-4 right-4 text-muted hover:text-cream">×</button>
         <h2 className="mb-5 text-lg font-bold">{title}</h2>
         {children}

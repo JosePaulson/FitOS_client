@@ -187,7 +187,7 @@ export default function SALeads() {
       {/* Note modal */}
       {noteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70">
-          <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7">
+          <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7 relative max-h-[90vh] overflow-y-auto">
             <button onClick={() => setNoteTarget(null)} className="absolute text-2xl leading-none top-4 right-5 text-muted hover:text-cream">×</button>
             <h2 className="mb-1 text-lg font-bold">Add follow-up note</h2>
             <p className="mb-4 text-sm text-muted">Lead: <span className="text-cream">{noteTarget.name}</span></p>

@@ -215,7 +215,7 @@ export default function Billing() {
       {/* Mark paid modal */}
       {paying && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70">
-          <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-sm p-7">
+          <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-sm p-7 max-h-[90vh] overflow-y-auto">
             <h2 className="mb-1 text-lg font-bold">Mark as paid</h2>
             <p className="mb-5 text-sm text-muted">
               Invoice <span className="font-mono text-cream">{paying.invoiceNumber}</span> —{' '}

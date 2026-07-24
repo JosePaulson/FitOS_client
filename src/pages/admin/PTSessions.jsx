@@ -308,6 +308,9 @@ import { useEffect, useState, useCallback } from 'react'
 import { ptApi, memberApi, staffApi, equipmentApi, workoutLibraryApi } from '../../api/index'
 import Select from '../../components/ui/Select'
 import { useAuth } from '../../context/AuthContext'
+import ExerciseRow from '../../components/admin/ExerciseRow'
+import CopyExercisesModal from '../../components/admin/CopyExercisesModal'
+import { computePR, formatPR } from '../../lib/exercisePR'
 
 const STATUS_STYLES = {
   pending: 'bg-amber-400/10 text-amber-400',
@@ -740,11 +743,34 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  // Selected member's past PT sessions, fetched fresh whenever they change
+  // — used to compute PRs shown next to each exercise. Excludes the session
+  // currently being edited so a re-save doesn't just match itself.
+  const [memberHistory, setMemberHistory] = useState([])
+  useEffect(() => {
+    if (!form.memberId) { setMemberHistory([]); return }
+    let cancelled = false
+    ptApi.list({ memberId: form.memberId, limit: 50 })
+      .then(({ data }) => {
+        if (cancelled) return
+        setMemberHistory((data.sessions || []).filter((s) => s._id !== session?._id))
+      })
+      .catch(() => { if (!cancelled) setMemberHistory([]) })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.memberId])
+
+  const [showCopyModal, setShowCopyModal] = useState(false)
+  function copyExercises(copied) {
+    setForm((v) => ({ ...v, exercises: [...v.exercises.filter((e) => e.name?.trim()), ...copied] }))
+    setShowCopyModal(false)
+  }
+
   const set = (f) => (e) => setForm((v) => ({ ...v, [f]: e.target.value }))
   const setVal = (f) => (v) => setForm((prev) => ({ ...prev, [f]: v }))
 
   function addExercise() {
-    setForm((v) => ({ ...v, exercises: [...v.exercises, { name: '', sets: '', reps: '', weight: '', notes: '' }] }))
+    setForm((v) => ({ ...v, exercises: [...v.exercises, { name: '', sets: '', reps: '', weight: '', notes: '', muscleGroup: '' }] }))
   }
   function updateExercise(i, field, val) {
     setForm((v) => {
@@ -877,27 +903,32 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="text-xs font-medium text-muted">Exercises</label>
-            <button type="button" onClick={addExercise}
-              className="text-xs transition-colors text-lime hover:text-lime-dark">+ Add exercise</button>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setShowCopyModal(true)} disabled={!form.memberId}
+                title={!form.memberId ? 'Select a member first' : 'Copy exercises from a previous session'}
+                className="text-xs transition-colors text-muted hover:text-cream disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-muted">
+                📋 Copy from previous
+              </button>
+              <button type="button" onClick={addExercise}
+                className="text-xs transition-colors text-lime hover:text-lime-dark">+ Add exercise</button>
+            </div>
           </div>
           {form.exercises.length === 0 && (
             <p className="text-xs text-muted bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 py-2">
-              No exercises added — click "+ Add exercise" to build the session programme
+              No exercises added — click "+ Add exercise" to build the session programme, or copy them from a previous session
             </p>
           )}
-          {form.exercises.map((ex, i) => (
-            <div key={i} className="flex gap-2 items-start mb-2 p-3 bg-white/[0.02] border border-white/[0.06] rounded-lg">
-              <div className="grid flex-1 grid-cols-2 gap-2">
-                <input placeholder="Exercise name" value={ex.name} onChange={(e) => updateExercise(i, 'name', e.target.value)}
-                  className="col-span-2 text-xs field-input" />
-                <input placeholder="Sets" type="number" value={ex.sets} onChange={(e) => updateExercise(i, 'sets', e.target.value)} className="text-xs field-input" />
-                <input placeholder="Reps" value={ex.reps} onChange={(e) => updateExercise(i, 'reps', e.target.value)} className="text-xs field-input" />
-                <input placeholder="Weight (kg)" type="number" value={ex.weight} onChange={(e) => updateExercise(i, 'weight', e.target.value)} className="text-xs field-input" />
-                <input placeholder="Notes" value={ex.notes} onChange={(e) => updateExercise(i, 'notes', e.target.value)} className="text-xs field-input" />
-              </div>
-              <button onClick={() => removeExercise(i)} className="text-muted hover:text-red-400 text-lg leading-none mt-0.5 transition-colors">×</button>
-            </div>
-          ))}
+          <div className="flex flex-col gap-2">
+            {form.exercises.map((ex, i) => (
+              <ExerciseRow
+                key={i}
+                exercise={ex}
+                history={memberHistory}
+                onChange={(field, val) => updateExercise(i, field, val)}
+                onRemove={() => removeExercise(i)}
+              />
+            ))}
+          </div>
         </div>
 
         <div className="flex gap-3 pt-2 border-t border-white/[0.06]">
@@ -908,6 +939,13 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
           </button>
         </div>
       </div>
+      {showCopyModal && (
+        <CopyExercisesModal
+          history={memberHistory}
+          onClose={() => setShowCopyModal(false)}
+          onCopy={copyExercises}
+        />
+      )}
     </Modal>
   )
 }
@@ -1032,6 +1070,18 @@ function DeclineRequestModal({ request, onClose, onDeclined }) {
 
 /* ── Session detail modal ────────────────────────────────────────────────── */
 function DetailModal({ session: s, onClose }) {
+  const [history, setHistory] = useState([])
+  useEffect(() => {
+    const memberId = s.memberId?._id
+    if (!memberId) return
+    let cancelled = false
+    ptApi.list({ memberId, limit: 50 })
+      .then(({ data }) => { if (!cancelled) setHistory((data.sessions || []).filter((sess) => sess._id !== s._id)) })
+      .catch(() => {})
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.memberId?._id])
+
   return (
     <Modal title="Session details" onClose={onClose}>
       <div className="flex flex-col gap-4">
@@ -1072,7 +1122,14 @@ function DetailModal({ session: s, onClose }) {
             <div className="flex flex-col gap-1.5">
               {s.exercises.map((ex, i) => (
                 <div key={i} className="flex items-center justify-between bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 py-2">
-                  <span className="text-sm font-medium">{ex.name}</span>
+                  <span className="flex items-center gap-2 text-sm font-medium">
+                    {ex.name}
+                    {computePR(history, ex.name) && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-400/10 text-amber-400">
+                        🏆 {formatPR(computePR(history, ex.name))}
+                      </span>
+                    )}
+                  </span>
                   <div className="flex gap-3 text-xs text-muted">
                     {ex.sets && <span>{ex.sets} sets</span>}
                     {ex.reps && <span>× {ex.reps}</span>}

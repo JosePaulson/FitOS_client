@@ -155,7 +155,7 @@ export default function Staff() {
       {/* Add staff modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70">
-          <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7">
+          <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7 relative max-h-[90vh] overflow-y-auto">
             <button onClick={() => setShowForm(false)} className="absolute text-2xl leading-none top-4 right-5 text-muted hover:text-cream">×</button>
             <h2 className="mb-5 text-lg font-bold">Add staff member</h2>
             <AddStaffForm error={formErr} loading={formLoad} onSubmit={handleAdd} onClose={() => setShowForm(false)} />

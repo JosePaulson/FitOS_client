@@ -111,11 +111,11 @@ export default function Plans() {
       {/* Plan form modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70">
-          <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7">
+          <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-5 sm:p-7 max-h-[90vh] overflow-y-auto relative">
             <button
               onClick={() => { setShowForm(false); setEditing(null) }}
               className="absolute text-xl leading-none top-4 right-4 text-muted hover:text-cream"
-            />
+            >×</button>
             <h2 className="mb-5 text-lg font-bold">{editing ? 'Edit plan' : 'New plan'}</h2>
             <PlanForm
               initial={editing}
@@ -156,13 +156,13 @@ function PlanForm({ initial, error, loading, onSubmit, onClose }) {
       <Field label="Plan name *">
         <input type="text" value={form.name} onChange={set('name')} className="field-input" placeholder="Monthly Premium" />
       </Field>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Validity *">
           <div className="flex gap-2">
             <input
               type="number" min="1" value={form.durationValue}
               onChange={set('durationValue')}
-              className="w-full field-input"
+              className="flex-1 w-full min-w-0 field-input"
             />
             <Select
               value={form.durationUnit}
@@ -171,7 +171,7 @@ function PlanForm({ initial, error, loading, onSubmit, onClose }) {
                 { value: 'days', label: 'Days' },
                 { value: 'months', label: 'Months' },
               ]}
-              className="w-32 shrink-0"
+              className="w-28 shrink-0"
             />
           </div>
           {form.durationUnit === 'months' && form.durationValue > 0 && (

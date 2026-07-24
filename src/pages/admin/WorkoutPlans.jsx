@@ -247,8 +247,8 @@ export default function WorkoutPlans() {
 
 function Modal({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4 py-8 overflow-y-auto">
-      <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-lg p-7 relative my-auto">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4">
+      <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-lg p-7 relative max-h-[85vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-4 right-5 text-muted hover:text-cream text-2xl leading-none">×</button>
         <h2 className="font-bold text-lg mb-5 capitalize">{title}</h2>
         {children}
@@ -305,7 +305,7 @@ function WorkoutForm({ initial, error, loading, onSubmit, onClose }) {
   }
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit({ ...form, days }) }} className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit({ ...form, days }) }} className="flex flex-col gap-4">
       {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">{error}</p>}
 
       <Field label="Plan name *">
@@ -430,7 +430,7 @@ function AssignModal({ plan, members, onAssign, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4">
-      <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7">
+      <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7 relative max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-4 right-5 text-muted hover:text-cream text-2xl leading-none">×</button>
         <h2 className="font-bold text-lg mb-1">Assign plan</h2>
         <p className="text-muted text-sm mb-4">{plan.name}</p>
