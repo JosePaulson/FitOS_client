@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { MUSCLE_GROUPS, EXERCISE_CATALOG } from '../../data/exerciseCatalog'
+import { useExerciseCatalog } from '../../hooks/useExerciseCatalog'
 import { getCustomExercises, addCustomExercise, getAllCustomExercises } from '../../lib/customExercises'
 import { computePR, formatPR } from '../../lib/exercisePR'
 
@@ -10,6 +10,7 @@ import { computePR, formatPR } from '../../lib/exercisePR'
  * inputs. `history` is the member's past PT sessions, used to look up PRs.
  */
 export default function ExerciseRow({ exercise, onChange, onRemove, history }) {
+  const { muscleGroups: MUSCLE_GROUPS, catalog: EXERCISE_CATALOG } = useExerciseCatalog()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState(exercise.name || '')
   const wrapRef = useRef(null)
@@ -71,7 +72,7 @@ export default function ExerciseRow({ exercise, onChange, onRemove, history }) {
                   active ? 'bg-lime text-black' : 'bg-white/[0.05] text-muted hover:text-cream'
                 }`}
               >
-                {g.icon} {g.label}
+                {g.label}
               </button>
             )
           })}

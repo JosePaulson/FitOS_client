@@ -344,3 +344,19 @@ export const complaintApi = {
 export const staffRatingApi = {
   list: (params = {}) => api.get('/staff-ratings', { params }),
 }
+
+/* ── Exercise catalog (admin — categories + exercises) ────────────────────── */
+export const exerciseCatalogApi = {
+  categories: {
+    list:   ()          => api.get('/exercise-catalog/categories'),
+    create: (data)       => api.post('/exercise-catalog/categories', data),
+    update: (id, data)   => api.patch(`/exercise-catalog/categories/${id}`, data),
+    remove: (id)         => api.delete(`/exercise-catalog/categories/${id}`),
+  },
+  exercises: {
+    list:   (params = {}) => api.get('/exercise-catalog/exercises', { params }),
+    create: (data)        => api.post('/exercise-catalog/exercises', data),
+    update: (id, data)    => api.patch(`/exercise-catalog/exercises/${id}`, data),
+    remove: (id)          => api.delete(`/exercise-catalog/exercises/${id}`),
+  },
+}

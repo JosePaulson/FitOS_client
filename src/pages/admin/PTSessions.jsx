@@ -304,13 +304,14 @@
 //   )
 // }
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { ptApi, memberApi, staffApi, equipmentApi, workoutLibraryApi } from '../../api/index'
 import Select from '../../components/ui/Select'
 import { useAuth } from '../../context/AuthContext'
 import ExerciseRow from '../../components/admin/ExerciseRow'
 import CopyExercisesModal from '../../components/admin/CopyExercisesModal'
-import { computePR, formatPR } from '../../lib/exercisePR'
+import { computePR, formatPR, sortByMuscleGroup } from '../../lib/exercisePR'
+import { useExerciseCatalog } from '../../hooks/useExerciseCatalog'
 
 const STATUS_STYLES = {
   pending: 'bg-amber-400/10 text-amber-400',
@@ -769,9 +770,24 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
   const set = (f) => (e) => setForm((v) => ({ ...v, [f]: e.target.value }))
   const setVal = (f) => (v) => setForm((prev) => ({ ...prev, [f]: v }))
 
+  // Refs to each exercise row so a newly-added one can be scrolled into
+  // view — cleared and rebuilt every render, indexed to match form.exercises.
+  const exerciseRefs = useRef([])
+  const [scrollToIndex, setScrollToIndex] = useState(null)
+
   function addExercise() {
+    setScrollToIndex(form.exercises.length) // index the new row will land at
     setForm((v) => ({ ...v, exercises: [...v.exercises, { name: '', sets: '', reps: '', weight: '', notes: '', muscleGroup: '' }] }))
   }
+
+  useEffect(() => {
+    if (scrollToIndex == null) return
+    const el = exerciseRefs.current[scrollToIndex]
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setScrollToIndex(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollToIndex, form.exercises.length])
+
   function updateExercise(i, field, val) {
     setForm((v) => {
       const ex = [...v.exercises]
@@ -920,13 +936,14 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
           )}
           <div className="flex flex-col gap-2">
             {form.exercises.map((ex, i) => (
-              <ExerciseRow
-                key={i}
-                exercise={ex}
-                history={memberHistory}
-                onChange={(field, val) => updateExercise(i, field, val)}
-                onRemove={() => removeExercise(i)}
-              />
+              <div key={i} ref={(el) => (exerciseRefs.current[i] = el)}>
+                <ExerciseRow
+                  exercise={ex}
+                  history={memberHistory}
+                  onChange={(field, val) => updateExercise(i, field, val)}
+                  onRemove={() => removeExercise(i)}
+                />
+              </div>
             ))}
           </div>
         </div>
@@ -1070,6 +1087,7 @@ function DeclineRequestModal({ request, onClose, onDeclined }) {
 
 /* ── Session detail modal ────────────────────────────────────────────────── */
 function DetailModal({ session: s, onClose }) {
+  const { muscleGroups } = useExerciseCatalog()
   const [history, setHistory] = useState([])
   useEffect(() => {
     const memberId = s.memberId?._id
@@ -1120,7 +1138,7 @@ function DetailModal({ session: s, onClose }) {
           <div>
             <p className="mb-2 text-xs font-semibold tracking-wider uppercase text-muted">Exercises</p>
             <div className="flex flex-col gap-1.5">
-              {s.exercises.map((ex, i) => (
+              {sortByMuscleGroup(s.exercises, muscleGroups).map((ex, i) => (
                 <div key={i} className="flex items-center justify-between bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 py-2">
                   <span className="flex items-center gap-2 text-sm font-medium">
                     {ex.name}

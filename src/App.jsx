@@ -37,6 +37,7 @@ import Settings     from './pages/admin/Settings'
 import PTSessions   from './pages/admin/PTSessions'
 import Equipment       from './pages/admin/Equipment'
 import WorkoutLibrary  from './pages/admin/WorkoutLibrary'
+import ExerciseCatalog from './pages/admin/ExerciseCatalog'
 import Complaints      from './pages/admin/Complaints'
 import StaffRatings    from './pages/admin/StaffRatings'
 
@@ -85,6 +86,9 @@ export default function App() {
         } />
         <Route path="equipment"        element={<Equipment />} />
         <Route path="workout-library"  element={<WorkoutLibrary />} />
+        <Route path="exercise-catalog" element={
+          <PrivateRoute roles={['owner', 'manager']}><ExerciseCatalog /></PrivateRoute>
+        } />
         <Route path="complaints"       element={
           <PrivateRoute roles={['owner', 'manager']}><Complaints /></PrivateRoute>
         } />
