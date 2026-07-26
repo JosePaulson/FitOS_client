@@ -1089,6 +1089,7 @@ function DeclineRequestModal({ request, onClose, onDeclined }) {
 function DetailModal({ session: s, onClose }) {
   const { muscleGroups } = useExerciseCatalog()
   const [history, setHistory] = useState([])
+  const [showPR, setShowPR] = useState(false)
   useEffect(() => {
     const memberId = s.memberId?._id
     if (!memberId) return
@@ -1136,25 +1137,39 @@ function DetailModal({ session: s, onClose }) {
 
         {s.exercises?.length > 0 && (
           <div>
-            <p className="mb-2 text-xs font-semibold tracking-wider uppercase text-muted">Exercises</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold tracking-wider uppercase text-muted">Exercises</p>
+              <button
+                onClick={() => setShowPR((v) => !v)}
+                className={`text-[10px] font-bold px-2.5 py-1 rounded-full transition-all border ${
+                  showPR ? 'bg-purple-500/15 text-purple-400 border-purple-500/40' : 'text-muted border-white/10 hover:text-cream'
+                }`}
+              >
+                {showPR ? 'Hide PR' : 'Show PR'}
+              </button>
+            </div>
             <div className="flex flex-col gap-1.5">
-              {sortByMuscleGroup(s.exercises, muscleGroups).map((ex, i) => (
-                <div key={i} className="flex items-center justify-between bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 py-2">
-                  <span className="flex items-center gap-2 text-sm font-medium">
-                    {ex.name}
-                    {computePR(history, ex.name) && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-400/10 text-amber-400">
-                        🏆 {formatPR(computePR(history, ex.name))}
-                      </span>
-                    )}
-                  </span>
-                  <div className="flex gap-3 text-xs text-muted">
-                    {ex.sets && <span>{ex.sets} sets</span>}
-                    {ex.reps && <span>× {ex.reps}</span>}
-                    {ex.weight && <span>@ {ex.weight}kg</span>}
+              {sortByMuscleGroup(s.exercises, muscleGroups).map((ex, i) => {
+                const pr = computePR(history, ex.name)
+                const weightIsPR = pr != null && ex.weight != null && Number(ex.weight) === pr.weight
+                return (
+                  <div key={i} className="flex items-center justify-between bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 py-2">
+                    <span className="text-sm font-medium">{ex.name}</span>
+                    <div className="flex flex-col items-end gap-0.5">
+                      <div className="flex gap-3 text-xs text-muted">
+                        {ex.sets && <span>{ex.sets} sets</span>}
+                        {ex.reps && <span>× {ex.reps}</span>}
+                        {ex.weight && (
+                          <span className={weightIsPR ? 'font-semibold text-purple-400' : ''}>@ {ex.weight}kg</span>
+                        )}
+                      </div>
+                      {showPR && pr && (
+                        <span className="text-[10px] font-bold text-purple-400">PR {formatPR(pr)}</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}

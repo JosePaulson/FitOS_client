@@ -1,24 +1,18 @@
 import { useEffect, useState, useRef } from 'react'
 import { workoutLibraryApi } from '../../api/index'
+import { useExerciseCatalog } from '../../hooks/useExerciseCatalog'
 import Select from '../../components/ui/Select'
 import { useAuth } from '../../context/AuthContext'
 
 const MAX_VIDEO_SECONDS = 20
 
-const CATEGORY_OPTIONS = [
-  { value: 'strength', label: 'Strength' },
-  { value: 'cardio',   label: 'Cardio' },
-  { value: 'mobility', label: 'Mobility' },
-  { value: 'hiit',     label: 'HIIT' },
-  { value: 'core',     label: 'Core' },
-  { value: 'other',    label: 'Other' },
-]
-const CATEGORY_LABEL = Object.fromEntries(CATEGORY_OPTIONS.map((c) => [c.value, c.label]))
-
 export default function WorkoutLibrary() {
   const { user } = useAuth()
   const canManage = ['owner', 'manager', 'trainer'].includes(user?.role)
   const canDelete = ['owner', 'manager'].includes(user?.role)
+  const { muscleGroups, catalog } = useExerciseCatalog()
+  const categoryOptions = muscleGroups.map((g) => ({ value: g.key, label: g.label }))
+  const categoryLabel = Object.fromEntries(categoryOptions.map((c) => [c.value, c.label]))
   const [items,   setItems]   = useState([])
   const [loading, setLoading] = useState(true)
   const [filter,  setFilter]  = useState('')
@@ -70,7 +64,7 @@ export default function WorkoutLibrary() {
         <Select
           value={filter}
           onChange={setFilter}
-          options={CATEGORY_OPTIONS}
+          options={categoryOptions}
           placeholder="All categories"
           isClearable
           className="w-52"
@@ -111,7 +105,7 @@ export default function WorkoutLibrary() {
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-semibold text-sm">{item.name}</h3>
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/5 text-muted whitespace-nowrap">
-                    {CATEGORY_LABEL[item.category] || item.category}
+                    {categoryLabel[item.category] || item.category || 'Uncategorized'}
                   </span>
                 </div>
                 {item.description && (
@@ -146,6 +140,8 @@ export default function WorkoutLibrary() {
       {showForm && (
         <WorkoutFormModal
           item={editing}
+          categoryOptions={categoryOptions}
+          catalog={catalog}
           onClose={() => { setShowForm(false); setEditing(null) }}
           onSaved={() => { setShowForm(false); setEditing(null); load() }}
         />
@@ -154,12 +150,14 @@ export default function WorkoutLibrary() {
   )
 }
 
-function WorkoutFormModal({ item, onClose, onSaved }) {
+function WorkoutFormModal({ item, categoryOptions, catalog, onClose, onSaved }) {
   const [form, setForm] = useState({
     name:        item?.name        || '',
-    category:    item?.category    || 'other',
+    category:    item?.category    || categoryOptions[0]?.value || '',
     description: item?.description || '',
   })
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const nameWrapRef = useRef(null)
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(item?.imageUrl || '')
   const [videoFile, setVideoFile] = useState(null)
@@ -171,6 +169,19 @@ function WorkoutFormModal({ item, onClose, onSaved }) {
 
   const imageInputRef = useRef(null)
   const videoInputRef = useRef(null)
+
+  // Close the exercise-name suggestion dropdown on an outside click.
+  useEffect(() => {
+    function onDocClick(e) {
+      if (nameWrapRef.current && !nameWrapRef.current.contains(e.target)) setShowSuggestions(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [])
+
+  const nameSuggestions = (catalog[form.category] || [])
+    .filter((n) => n.toLowerCase().includes(form.name.trim().toLowerCase()))
+    .slice(0, 8)
 
   function onPickImage(e) {
     const file = e.target.files?.[0]
@@ -243,13 +254,36 @@ function WorkoutFormModal({ item, onClose, onSaved }) {
         )}
 
         <div className="flex flex-col gap-4">
-          <Field label="Name *">
-            <input type="text" value={form.name} onChange={set('name')} className="field-input" placeholder="e.g. Barbell Back Squat" autoFocus />
+          <Field label="Category">
+            <Select value={form.category} onChange={setVal('category')} options={categoryOptions} />
           </Field>
 
-          <Field label="Category">
-            <Select value={form.category} onChange={setVal('category')} options={CATEGORY_OPTIONS} />
-          </Field>
+          <div ref={nameWrapRef} className="relative flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-muted">Name *</label>
+            <input
+              type="text" value={form.name}
+              onChange={(e) => { setForm((v) => ({ ...v, name: e.target.value })); setShowSuggestions(true) }}
+              onFocus={() => setShowSuggestions(true)}
+              className="field-input" placeholder="e.g. Barbell Back Squat"
+            />
+            {/* Suggestions pulled from the exercise catalog for the chosen
+                category — keeps workout-library names in sync with the
+                names members see when logging a workout. */}
+            {showSuggestions && nameSuggestions.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 overflow-y-auto border shadow-lg top-full bg-card border-white/10 rounded-lg max-h-48">
+                {nameSuggestions.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => { setForm((v) => ({ ...v, name: n })); setShowSuggestions(false) }}
+                    className="w-full px-3 py-2 text-sm text-left hover:bg-white/5 transition-all"
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <Field label="Description (optional)">
             <textarea rows={2} value={form.description} onChange={set('description')} className="field-input resize-none" placeholder="Form cues, muscles worked, etc." />
