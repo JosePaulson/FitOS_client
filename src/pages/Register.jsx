@@ -164,7 +164,7 @@ export default function Register() {
                     className="flex-1 bg-white/[0.04] px-4 py-3 text-cream text-sm outline-none"
                   />
                   <span className="bg-white/[0.06] px-3 py-3 text-muted text-xs border-l border-white/10 whitespace-nowrap">
-                    .fitos.in
+                    .f8os.in
                   </span>
                 </div>
                 <p className="text-xs text-muted">Your gym&apos;s unique URL. Lowercase, no spaces.</p>
@@ -282,6 +282,13 @@ export default function Register() {
           <Link to="/login" className="font-medium text-lime hover:text-lime-dark">
             Sign in
           </Link>
+        </p>
+
+        <p className="mt-4 text-xs text-center text-muted">
+          By signing up, you agree to our{' '}
+          <Link to="/terms" className="underline hover:text-cream">Terms</Link>
+          {' '}&{' '}
+          <Link to="/privacy" className="underline hover:text-cream">Privacy Policy</Link>.
         </p>
       </div>
     </div>

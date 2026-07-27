@@ -128,7 +128,7 @@ export default function SAGyms() {
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-center font-semibold">{gym.memberCount ?? 0}</td>
-                  <td className="px-4 py-3.5 text-muted text-xs font-mono">{gym.subdomain}.fitos.in</td>
+                  <td className="px-4 py-3.5 text-muted text-xs font-mono">{gym.subdomain}.f8os.in</td>
                   <td className="px-4 py-3.5 text-muted text-xs whitespace-nowrap">
                     {new Date(gym.createdAt).toLocaleDateString('en-IN')}
                   </td>
@@ -193,7 +193,7 @@ function EditGymModal({ gym, saving, error, onSave, onClose }) {
       <div className="bg-card border border-white/[0.1] rounded-2xl w-full max-w-md p-7 relative max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute text-2xl leading-none top-4 right-5 text-muted hover:text-cream">×</button>
         <h2 className="mb-1 text-lg font-bold">Edit gym subscription</h2>
-        <p className="mb-5 text-sm truncate text-muted">{gym.name} · {gym.subdomain}.fitos.in</p>
+        <p className="mb-5 text-sm truncate text-muted">{gym.name} · {gym.subdomain}.f8os.in</p>
 
         {error && <p className="px-3 py-2 mb-4 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/20">{error}</p>}
 

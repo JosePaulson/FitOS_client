@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import UpdateChecker from './components/UpdateChecker'
+import CookieConsentBanner from './components/CookieConsentBanner'
 
 // Layouts
 import { Outlet }        from 'react-router-dom'
@@ -18,6 +19,10 @@ import Home     from './pages/Home'
 import Pricing  from './pages/Pricing'
 import Contact  from './pages/Contact'
 import NotFound from './pages/NotFound'
+import TermsOfService from './pages/legal/TermsOfService'
+import PrivacyPolicy  from './pages/legal/PrivacyPolicy'
+import RefundPolicy   from './pages/legal/RefundPolicy'
+import CookiePolicy   from './pages/legal/CookiePolicy'
 
 // Auth pages
 import Login    from './pages/Login'
@@ -50,12 +55,17 @@ export default function App() {
   return (
     <>
       <UpdateChecker />
+      <CookieConsentBanner />
       <Routes>
       {/* ── Public routes ── */}
       <Route element={<PublicLayout />}>
         <Route path="/"        element={<PublicRoute><Home /></PublicRoute>} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/terms"         element={<TermsOfService />} />
+        <Route path="/privacy"       element={<PrivacyPolicy />} />
+        <Route path="/refund-policy" element={<RefundPolicy />} />
+        <Route path="/cookie-policy" element={<CookiePolicy />} />
       </Route>
 
       {/* ── Auth routes ── */}

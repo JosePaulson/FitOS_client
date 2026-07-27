@@ -335,7 +335,7 @@
 //           <div className="flex flex-col gap-4">
 //             <p className="text-sm text-muted">
 //               This PIN lets <span className="font-medium text-cream">{pinTarget.name}</span> log into the FitOS Member Portal at{' '}
-//               <span className="font-mono text-xs text-lime">member.fitos.in</span> using their phone number.
+//               <span className="font-mono text-xs text-lime">x.f8os.in</span> using their phone number.
 //             </p>
 //             {pinError && <p className="px-3 py-2 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/20">{pinError}</p>}
 //             {pinSuccess && <p className="px-3 py-2 text-sm border rounded-lg text-lime bg-lime/10 border-lime/20">{pinSuccess}</p>}
@@ -794,7 +794,7 @@ export default function Members() {
         <Modal title={`Set portal PIN — ${pinTarget.name}`} onClose={() => setPinTarget(null)}>
           <div className="flex flex-col gap-4">
             <p className="text-sm text-muted">
-              This PIN lets <span className="font-medium text-cream">{pinTarget.name}</span> log into the FitOS Member Portal at <span className="font-mono text-xs text-lime">member.fitos.in</span> using their phone number.
+              This PIN lets <span className="font-medium text-cream">{pinTarget.name}</span> log into the FitOS Member Portal at <span className="font-mono text-xs text-lime">x.f8os.in</span> using their phone number.
             </p>
             {pinError && <p className="px-3 py-2 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/20">{pinError}</p>}
             {pinSuccess && <p className="px-3 py-2 text-sm border rounded-lg text-lime bg-lime/10 border-lime/20">{pinSuccess}</p>}

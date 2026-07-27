@@ -22,9 +22,10 @@ const FOOTER_COLS = [
   {
     title: 'Legal',
     links: [
-      { label: 'Privacy policy', href: '#' },
-      { label: 'Terms of service', href: '#' },
-      { label: 'Refund policy', href: '#' },
+      { label: 'Privacy policy', href: '/privacy' },
+      { label: 'Terms of service', href: '/terms' },
+      { label: 'Refund policy', href: '/refund-policy' },
+      { label: 'Cookie policy', href: '/cookie-policy' },
     ],
   },
 ]
@@ -80,7 +81,11 @@ export default function Footer() {
 
         {/* Bottom row */}
         <div className="flex flex-col items-center justify-between gap-3 pt-8 text-xs md:flex-row text-muted">
-          <span>© {new Date().getFullYear()} FitOS. c/o Kerasoft India, All rights reserved</span>
+          <span>
+            © {new Date().getFullYear()}{' '}
+            <a href="https://www.f8os.in" className="hover:text-cream">FitOS</a>
+            {' '}(www.f8os.in). c/o Kerasoft India, All rights reserved
+          </span>
           <span>All prices are GST-inclusive (18%).</span>
         </div>
       </div>

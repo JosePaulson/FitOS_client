@@ -49,7 +49,7 @@ export const FEATURES = [
   {
     icon: '📱',
     title: 'Member portal',
-    desc: 'Members view their plan, invoices, and workout schedule from any device. Reduces support calls to your staff.',
+    desc: 'Your own branded app at x.f8os.in — members log workouts, book PT sessions, view invoices, and chat with AI Coach. Installable on any phone, no app store required.',
   },
 ]
 
