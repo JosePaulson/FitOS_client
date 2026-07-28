@@ -24,6 +24,7 @@ export default function PTPlans() {
   const [showPlanForm, setShowPlanForm] = useState(false)
   const [editingPlan, setEditingPlan] = useState(null)
   const [showAssignForm, setShowAssignForm] = useState(false)
+  const [editingAssignment, setEditingAssignment] = useState(null)
   const [formError, setFormError] = useState('')
   const [formLoading, setFormLoading] = useState(false)
 
@@ -67,6 +68,16 @@ export default function PTPlans() {
       setShowAssignForm(false)
       loadAll(false)
     } catch (err) { setFormError(err.response?.data?.message || 'Failed to assign PT plan') }
+    finally { setFormLoading(false) }
+  }
+
+  async function updateAssignment(id, form) {
+    setFormError(''); setFormLoading(true)
+    try {
+      await memberPTPlanApi.update(id, form)
+      setEditingAssignment(null)
+      loadAll(false)
+    } catch (err) { setFormError(err.response?.data?.message || 'Failed to update PT plan') }
     finally { setFormLoading(false) }
   }
 
@@ -158,7 +169,13 @@ export default function PTPlans() {
           </div>
         )
       ) : (
-        <AssignmentsTable assignments={assignments} onLogClass={logClass} onUndoClass={undoClass} onCancel={cancelAssignment} />
+        <AssignmentsTable
+          assignments={assignments}
+          onLogClass={logClass}
+          onUndoClass={undoClass}
+          onCancel={cancelAssignment}
+          onEdit={(a) => { setEditingAssignment(a); setFormError('') }}
+        />
       )}
 
       {showPlanForm && (
@@ -176,11 +193,18 @@ export default function PTPlans() {
             onSubmit={assignPlan} onClose={() => setShowAssignForm(false)} />
         </Modal>
       )}
+
+      {editingAssignment && (
+        <Modal title="Edit PT plan assignment" onClose={() => setEditingAssignment(null)}>
+          <EditAssignmentForm assignment={editingAssignment} trainers={trainers} error={formError} loading={formLoading}
+            onSubmit={(form) => updateAssignment(editingAssignment._id, form)} onClose={() => setEditingAssignment(null)} />
+        </Modal>
+      )}
     </div>
   )
 }
 
-function AssignmentsTable({ assignments, onLogClass, onUndoClass, onCancel }) {
+function AssignmentsTable({ assignments, onLogClass, onUndoClass, onCancel, onEdit }) {
   if (assignments.length === 0) {
     return <div className="py-20 text-sm text-center text-muted">No PT plans assigned to any member yet.</div>
   }
@@ -245,6 +269,10 @@ function AssignmentsTable({ assignments, onLogClass, onUndoClass, onCancel }) {
                             Undo
                           </button>
                         )}
+                        <button onClick={() => onEdit(a)}
+                          className="text-xs text-muted border border-white/10 px-2.5 py-1 rounded-lg hover:text-cream transition-all">
+                          Edit
+                        </button>
                         <button onClick={() => onCancel(a)}
                           className="text-xs text-red-400/70 hover:text-red-400 border border-white/10 px-2.5 py-1 rounded-lg hover:border-red-400/20 transition-all">
                           Cancel
@@ -403,6 +431,54 @@ function AssignForm({ plans, trainers, error, loading, canManageCatalog, onCreat
         <button type="button" onClick={onClose} className="flex-1 border border-white/10 text-muted py-2.5 rounded-lg text-sm hover:text-cream transition-all">Cancel</button>
         <button type="submit" disabled={loading || !member || !ptPlanId} className="flex-[2] bg-lime text-black font-bold py-2.5 rounded-lg text-sm hover:bg-lime-dark transition-all disabled:opacity-60">
           {loading ? 'Assigning…' : 'Assign plan'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function EditAssignmentForm({ assignment: a, trainers, error, loading, onSubmit, onClose }) {
+  const [trainerId, setTrainerId] = useState(a.trainerId?._id || a.trainerId || '')
+  const [startDate, setStartDate] = useState(() => new Date(a.startDate).toISOString().slice(0, 10))
+  const [expiryDate, setExpiryDate] = useState(() => new Date(a.expiryDate).toISOString().slice(0, 10))
+
+  return (
+    <form onSubmit={(e) => {
+      e.preventDefault()
+      onSubmit({ trainerId: trainerId || undefined, startDate, expiryDate })
+    }} className="flex flex-col gap-4">
+      {error && <p className="px-3 py-2 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/20">{error}</p>}
+
+      <div>
+        <p className="font-medium text-cream">{a.name}</p>
+        <p className="text-xs text-muted">{a.memberId?.name || 'Member'} · {a.classesUsed} / {a.classesTotal} classes used</p>
+      </div>
+
+      <Field label="Trainer (optional)">
+        <Select
+          value={trainerId}
+          onChange={setTrainerId}
+          options={trainers.map((t) => ({ value: t._id, label: t.name }))}
+          placeholder="Unassigned"
+        />
+      </Field>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Start date">
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="field-input" />
+        </Field>
+        <Field label="Expiry date">
+          <input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className="field-input" />
+        </Field>
+      </div>
+      <p className="text-xs text-muted">
+        Changing the start date doesn't automatically shift the expiry date — adjust both if the plan should keep the same length.
+      </p>
+
+      <div className="flex gap-3 mt-1">
+        <button type="button" onClick={onClose} className="flex-1 border border-white/10 text-muted py-2.5 rounded-lg text-sm hover:text-cream transition-all">Cancel</button>
+        <button type="submit" disabled={loading} className="flex-[2] bg-lime text-black font-bold py-2.5 rounded-lg text-sm hover:bg-lime-dark transition-all disabled:opacity-60">
+          {loading ? 'Saving…' : 'Save changes'}
         </button>
       </div>
     </form>

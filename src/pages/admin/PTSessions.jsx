@@ -305,7 +305,7 @@
 // }
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { ptApi, memberApi, staffApi, equipmentApi, workoutLibraryApi } from '../../api/index'
+import { ptApi, memberApi, staffApi, equipmentApi, workoutLibraryApi, workoutLogApi } from '../../api/index'
 import Select from '../../components/ui/Select'
 import { useAuth } from '../../context/AuthContext'
 import ExerciseRow from '../../components/admin/ExerciseRow'
@@ -744,17 +744,23 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  // Selected member's past PT sessions, fetched fresh whenever they change
-  // — used to compute PRs shown next to each exercise. Excludes the session
-  // currently being edited so a re-save doesn't just match itself.
+  // Selected member's past PT sessions AND self-logged workouts, fetched
+  // fresh whenever they change — used to compute PRs shown next to each
+  // exercise. A PR is a PR regardless of which side it was logged from.
+  // Excludes the session currently being edited so a re-save doesn't just
+  // match itself.
   const [memberHistory, setMemberHistory] = useState([])
   useEffect(() => {
     if (!form.memberId) { setMemberHistory([]); return }
     let cancelled = false
-    ptApi.list({ memberId: form.memberId, limit: 50 })
-      .then(({ data }) => {
+    Promise.all([
+      ptApi.list({ memberId: form.memberId, limit: 50 }),
+      workoutLogApi.list({ memberId: form.memberId, limit: 100 }),
+    ])
+      .then(([ptRes, logRes]) => {
         if (cancelled) return
-        setMemberHistory((data.sessions || []).filter((s) => s._id !== session?._id))
+        const ptHistory = (ptRes.data.sessions || []).filter((s) => s._id !== session?._id)
+        setMemberHistory([...ptHistory, ...(logRes.data.logs || [])])
       })
       .catch(() => { if (!cancelled) setMemberHistory([]) })
     return () => { cancelled = true }
@@ -1094,8 +1100,15 @@ function DetailModal({ session: s, onClose }) {
     const memberId = s.memberId?._id
     if (!memberId) return
     let cancelled = false
-    ptApi.list({ memberId, limit: 50 })
-      .then(({ data }) => { if (!cancelled) setHistory((data.sessions || []).filter((sess) => sess._id !== s._id)) })
+    Promise.all([
+      ptApi.list({ memberId, limit: 50 }),
+      workoutLogApi.list({ memberId, limit: 100 }),
+    ])
+      .then(([ptRes, logRes]) => {
+        if (cancelled) return
+        const ptHistory = (ptRes.data.sessions || []).filter((sess) => sess._id !== s._id)
+        setHistory([...ptHistory, ...(logRes.data.logs || [])])
+      })
       .catch(() => {})
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps

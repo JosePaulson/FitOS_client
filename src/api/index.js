@@ -284,6 +284,11 @@ export const ptApi = {
   decline: (id, data) => api.post(`/pt-sessions/${id}/decline`, data),
 }
 
+/* ── Member workout logs (admin — read-only, for PR lookups) ─────────────── */
+export const workoutLogApi = {
+  list: (params) => api.get('/workout-logs', { params }),
+}
+
 /* ── Equipment (admin) ────────────────────────────────────────────────────── */
 export const equipmentApi = {
   list: (params) => api.get('/equipment', { params }),
