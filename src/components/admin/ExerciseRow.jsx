@@ -94,7 +94,7 @@ export default function ExerciseRow({ exercise, onChange, onRemove, history }) {
                 className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap bg-amber-400/10 text-amber-400 border border-amber-400/25"
                 title="This member's personal record for this exercise"
               >
-                🏆 {formatPR(pr)}
+                {formatPR(pr)}
               </span>
             )}
           </div>
@@ -115,7 +115,7 @@ export default function ExerciseRow({ exercise, onChange, onRemove, history }) {
                     className="flex items-center justify-between w-full gap-2 px-3 py-2 text-xs text-left transition-colors text-cream hover:bg-white/[0.05]"
                   >
                     <span>{name}</span>
-                    {sPr && <span className="text-[10px] shrink-0 text-amber-400">🏆 {formatPR(sPr)}</span>}
+                    {sPr && <span className="text-[10px] shrink-0 text-amber-400">{formatPR(sPr)}</span>}
                   </button>
                 )
               })}

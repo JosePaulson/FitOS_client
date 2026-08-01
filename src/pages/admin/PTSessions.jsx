@@ -312,6 +312,7 @@ import ExerciseRow from '../../components/admin/ExerciseRow'
 import CopyExercisesModal from '../../components/admin/CopyExercisesModal'
 import { computePR, formatPR, sortByMuscleGroup } from '../../lib/exercisePR'
 import { useExerciseCatalog } from '../../hooks/useExerciseCatalog'
+import { useDragReorder } from '../../hooks/useDragReorder'
 
 const STATUS_STYLES = {
   pending: 'bg-amber-400/10 text-amber-400',
@@ -805,6 +806,11 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
     setForm((v) => ({ ...v, exercises: v.exercises.filter((_, idx) => idx !== i) }))
   }
 
+  const { list: orderedExercises, dragIndex, getHandleProps, setRowRef } = useDragReorder(
+    form.exercises,
+    (reordered) => setForm((v) => ({ ...v, exercises: reordered }))
+  )
+
   async function save() {
     setError(''); setSaving(true)
     try {
@@ -941,14 +947,28 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
             </p>
           )}
           <div className="flex flex-col gap-2">
-            {form.exercises.map((ex, i) => (
-              <div key={i} ref={(el) => (exerciseRefs.current[i] = el)}>
-                <ExerciseRow
-                  exercise={ex}
-                  history={memberHistory}
-                  onChange={(field, val) => updateExercise(i, field, val)}
-                  onRemove={() => removeExercise(i)}
-                />
+            {orderedExercises.map((ex, i) => (
+              <div
+                key={i}
+                ref={(el) => { exerciseRefs.current[i] = el; setRowRef(i)(el) }}
+                className="flex items-stretch gap-1.5"
+                style={{ opacity: dragIndex === i ? 0.5 : 1 }}
+              >
+                <span
+                  {...getHandleProps(i)}
+                  aria-label="Drag to reorder"
+                  className="flex items-center justify-center px-1 text-muted hover:text-cream shrink-0 select-none"
+                >
+                  ⠿
+                </span>
+                <div className="flex-1 min-w-0">
+                  <ExerciseRow
+                    exercise={ex}
+                    history={memberHistory}
+                    onChange={(field, val) => updateExercise(i, field, val)}
+                    onRemove={() => removeExercise(i)}
+                  />
+                </div>
               </div>
             ))}
           </div>

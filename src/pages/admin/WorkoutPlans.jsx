@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { workoutApi, memberApi } from '../../api/index'
 import Select from '../../components/ui/Select'
 
@@ -44,13 +44,13 @@ export default function WorkoutPlans() {
     memberApi.list({ limit: 200 }).then(({ data }) => setMembers(data.members)).catch(() => {})
   }, [])
 
-  async function handleSave(form) {
+  async function handleSave(form, file, removeFile) {
     setFormErr(''); setFormLoad(true)
     try {
       if (tab === 'workout') {
         editing ? await workoutApi.updateWorkout(editing._id, form) : await workoutApi.createWorkout(form)
       } else {
-        editing ? await workoutApi.updateDiet(editing._id, form) : await workoutApi.createDiet(form)
+        editing ? await workoutApi.updateDiet(editing._id, form, file, removeFile) : await workoutApi.createDiet(form, file)
       }
       setShowForm(false); setEditing(null); load()
     } catch (err) { setFormErr(err.response?.data?.message || 'Failed to save') }
@@ -177,6 +177,9 @@ export default function WorkoutPlans() {
                 )}
                 {tab === 'diet' && plan.targetProtein && (
                   <span>🥩 {plan.targetProtein}g protein</span>
+                )}
+                {tab === 'diet' && plan.fileUrl && (
+                  <span>📎 {plan.fileName || 'Attached file'}</span>
                 )}
               </div>
 
@@ -381,8 +384,23 @@ function DietForm({ initial, error, loading, onSubmit, onClose }) {
   })
   const set = (f) => (e) => setForm((v) => ({ ...v, [f]: e.target.value }))
 
+  const [file, setFile] = useState(null)
+  const [removeFile, setRemoveFile] = useState(false)
+  const [fileError, setFileError] = useState('')
+  const fileInputRef = useRef(null)
+  const hasExistingFile = initial?.fileUrl && !removeFile
+
+  function onPickFile(e) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    if (f.size > 15 * 1024 * 1024) { setFileError('File is too large — max 15MB'); return }
+    setFileError('')
+    setFile(f)
+    setRemoveFile(false)
+  }
+
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(form) }} className="flex flex-col gap-4">
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(form, file, removeFile) }} className="flex flex-col gap-4">
       {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">{error}</p>}
       <Field label="Plan name *">
         <input type="text" value={form.name} onChange={set('name')} className="field-input" placeholder="High Protein Fat Loss" />
@@ -404,6 +422,48 @@ function DietForm({ initial, error, loading, onSubmit, onClose }) {
       <Field label="Description / notes">
         <textarea rows={3} value={form.description} onChange={set('description')} className="field-input resize-none" placeholder="Meal timing, notes for the member…" />
       </Field>
+
+      {/* Plan file — an alternative (or supplement) to the fields above:
+          hand the member a PDF/Word/Excel/image plan directly, downloadable
+          from their Diet tab. */}
+      <Field label="Plan file (optional)">
+        <p className="text-xs text-muted -mt-1 mb-1">PDF, Word, Excel, or image — up to 15MB. Members can download it from their Diet tab.</p>
+        {fileError && <p className="text-red-400 text-xs mb-1">{fileError}</p>}
+
+        {hasExistingFile && !file && (
+          <div className="flex items-center justify-between gap-2 bg-black border border-white/[0.08] rounded-lg px-3 py-2 mb-2">
+            <a href={initial.fileUrl} target="_blank" rel="noreferrer" className="text-xs text-lime truncate hover:underline">
+              📎 {initial.fileName || 'Current file'}
+            </a>
+            <button type="button" onClick={() => setRemoveFile(true)} className="text-xs text-red-400/70 hover:text-red-400 shrink-0">
+              Remove
+            </button>
+          </div>
+        )}
+        {removeFile && (
+          <p className="text-xs text-amber-400 mb-2">Current file will be removed when you save.</p>
+        )}
+        {file && (
+          <div className="flex items-center justify-between gap-2 bg-black border border-white/[0.08] rounded-lg px-3 py-2 mb-2">
+            <span className="text-xs text-cream truncate">📎 {file.name}</span>
+            <button type="button" onClick={() => setFile(null)} className="text-xs text-muted hover:text-cream shrink-0">×</button>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="text-xs text-muted border border-white/10 px-3 py-2 rounded-lg hover:text-cream hover:border-white/20 transition-all w-fit"
+        >
+          {hasExistingFile || file ? 'Replace file' : '+ Attach file'}
+        </button>
+        <input
+          ref={fileInputRef} type="file" className="hidden"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,image/jpeg,image/png,image/webp"
+          onChange={onPickFile}
+        />
+      </Field>
+
       <div className="flex gap-3 mt-1">
         <button type="button" onClick={onClose} className="flex-1 border border-white/10 text-muted py-2.5 rounded-lg text-sm hover:text-cream transition-all">Cancel</button>
         <button type="submit" disabled={loading} className="flex-[2] bg-lime text-black font-bold py-2.5 rounded-lg text-sm hover:bg-lime-dark transition-all disabled:opacity-60">

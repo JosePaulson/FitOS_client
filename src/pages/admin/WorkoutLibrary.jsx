@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { workoutLibraryApi } from '../../api/index'
 import { useExerciseCatalog } from '../../hooks/useExerciseCatalog'
+import { useDragReorder } from '../../hooks/useDragReorder'
 import Select from '../../components/ui/Select'
 import { useAuth } from '../../context/AuthContext'
 
@@ -41,6 +42,22 @@ export default function WorkoutLibrary() {
     }
   }
 
+  // Persists a new order after a drag-to-reorder ends — only available
+  // while filtered to a single category, since order is only meaningful
+  // within one category's sequence.
+  async function persistOrder(reordered) {
+    const previous = items
+    setItems(reordered) // optimistic
+    try {
+      await workoutLibraryApi.reorder(filter, reordered.map((i) => i._id))
+    } catch {
+      setItems(previous) // revert on failure
+      alert('Failed to save the new order')
+    }
+  }
+
+  const { list: orderedItems, dragIndex, getHandleProps, setRowRef } = useDragReorder(items, persistOrder)
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -60,7 +77,7 @@ export default function WorkoutLibrary() {
         )}
       </div>
 
-      <div className="mb-6">
+      <div className="flex items-center gap-3 mb-6">
         <Select
           value={filter}
           onChange={setFilter}
@@ -69,6 +86,11 @@ export default function WorkoutLibrary() {
           isClearable
           className="w-52"
         />
+        <p className="text-xs text-muted">
+          {filter
+            ? 'Drag ⠿ to set the order members see these in.'
+            : 'Pick a category to reorder the exercises/videos within it.'}
+        </p>
       </div>
 
       {loading ? (
@@ -84,10 +106,33 @@ export default function WorkoutLibrary() {
             : 'No workouts added yet.'}
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((item) => (
-            <div key={item._id} className="bg-card border border-white/[0.08] rounded-xl overflow-hidden flex flex-col">
-              <div className="aspect-video bg-white/[0.03] flex items-center justify-center overflow-hidden relative">
+        <div className={filter ? 'flex flex-col gap-3' : 'grid sm:grid-cols-2 lg:grid-cols-3 gap-4'}>
+          {orderedItems.map((item, index) => (
+            <div
+              key={item._id}
+              ref={setRowRef(index)}
+              className="bg-card border border-white/[0.08] rounded-xl overflow-hidden flex flex-col"
+              style={filter ? {
+                flexDirection: 'row',
+                alignItems: 'stretch',
+                opacity: dragIndex === index ? 0.5 : 1,
+              } : undefined}
+            >
+              {filter && canManage && (
+                <span
+                  {...getHandleProps(index)}
+                  aria-label="Drag to reorder"
+                  className="flex items-center justify-center px-3 text-muted hover:text-cream shrink-0 select-none"
+                >
+                  ⠿
+                </span>
+              )}
+              <div className={filter ? 'w-28 shrink-0 bg-white/[0.03] flex items-center justify-center overflow-hidden relative' : 'aspect-video bg-white/[0.03] flex items-center justify-center overflow-hidden relative'}>
+                {filter && (
+                  <span className="absolute top-1.5 left-1.5 text-[10px] font-bold bg-black/70 text-white w-5 h-5 rounded-full flex items-center justify-center">
+                    {index + 1}
+                  </span>
+                )}
                 {item.videoUrl ? (
                   <>
                     <video src={item.videoUrl} className="w-full h-full object-cover" muted playsInline />

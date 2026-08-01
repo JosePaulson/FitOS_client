@@ -223,13 +223,33 @@ export const workoutApi = {
 
   // Diet plans
   listDiet: (params = {}) => api.get('/workout-plans/diet', { params }),
-  createDiet: (data) => api.post('/workout-plans/diet', data),
-  updateDiet: (id, data) => api.patch(`/workout-plans/diet/${id}`, data),
+  // `file` is an optional File (PDF/Word/Excel/image) attached alongside
+  // the structured meal builder; `removeFile` (update only) clears an
+  // existing attachment.
+  createDiet: (data, file) => {
+    const fd = toDietFormData(data, file)
+    return api.post('/workout-plans/diet', fd, { headers: { 'Content-Type': undefined } })
+  },
+  updateDiet: (id, data, file, removeFile) => {
+    const fd = toDietFormData(data, file, removeFile)
+    return api.patch(`/workout-plans/diet/${id}`, fd, { headers: { 'Content-Type': undefined } })
+  },
   assignDiet: (id, memberIds) => api.post(`/workout-plans/diet/${id}/assign`, { memberIds }),
   removeDiet: (id) => api.delete(`/workout-plans/diet/${id}`),
 
   // Prebuilt starter library
   seedTemplates: () => api.post('/workout-plans/seed-templates'),
+}
+
+function toDietFormData(data, file, removeFile) {
+  const fd = new FormData()
+  Object.entries(data).forEach(([k, v]) => {
+    if (v === undefined || v === null) return
+    fd.append(k, k === 'meals' ? JSON.stringify(v) : v)
+  })
+  if (file) fd.append('file', file)
+  if (removeFile) fd.append('removeFile', 'true')
+  return fd
 }
 
 /* ── Staff ────────────────────────────────────────────────────────────────── */
@@ -327,6 +347,7 @@ export const workoutLibraryApi = {
     return api.patch(`/workout-library/${id}`, fd, { headers: { 'Content-Type': undefined } })
   },
   remove: (id) => api.delete(`/workout-library/${id}`),
+  reorder: (category, orderedIds) => api.patch('/workout-library/reorder', { category, orderedIds }),
 }
 
 function toWorkoutFormData(data, files) {
