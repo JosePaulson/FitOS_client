@@ -11,6 +11,58 @@ const MONTH_NAMES = ['', 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','
 
 export default function Dashboard() {
   const { gym, user } = useAuth()
+
+  // The full business-overview stats endpoint (revenue, membership funnel,
+  // etc.) is intentionally owner/manager-only — trainers and receptionists
+  // hitting it were the source of "Could not load dashboard": the request
+  // always came back 403, which the catch block turned into a generic
+  // error. Rather than trying (and failing) to load business data they
+  // don't have access to, they get a lightweight, role-appropriate home
+  // screen instead.
+  const canSeeBusinessOverview = user?.role === 'owner' || user?.role === 'manager'
+
+  return (
+    <div className="max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight">
+          Good {greeting()}, {user?.name?.split(' ')[0]} 👋
+        </h1>
+        <p className="text-muted text-sm mt-1">Here's what's happening at {gym?.name} today.</p>
+      </div>
+
+      {canSeeBusinessOverview ? <BusinessOverview /> : <StaffHome role={user?.role} />}
+    </div>
+  )
+}
+
+function StaffHome({ role }) {
+  const links = [
+    { label: 'PT sessions',    to: '/dashboard/pt-sessions',   icon: '🏋️', roles: ['trainer'] },
+    { label: 'My attendance & pay', to: '/dashboard/payroll',  icon: '💵', roles: null },
+    { label: 'Leave',          to: '/dashboard/leave',         icon: '🌴', roles: null },
+    { label: 'Reimbursements', to: '/dashboard/reimbursements',icon: '🧾', roles: null },
+    { label: 'Members',        to: '/dashboard/members',       icon: '👥', roles: ['receptionist'] },
+    { label: 'Record check-in',to: '/dashboard/attendance',    icon: '✅', roles: ['receptionist'] },
+    { label: 'Complaints',     to: '/dashboard/complaints',    icon: '📮', roles: null },
+  ].filter((l) => !l.roles || l.roles.includes(role))
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {links.map((l) => (
+        <Link
+          key={l.label}
+          to={l.to}
+          className="flex items-center gap-2 bg-card border border-white/[0.08] hover:border-lime/30 px-4 py-3 rounded-lg text-sm text-muted hover:text-cream transition-all"
+        >
+          <span>{l.icon}</span> {l.label}
+        </Link>
+      ))}
+    </div>
+  )
+}
+
+function BusinessOverview() {
   const [data, setData]     = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState('')
@@ -26,15 +78,7 @@ export default function Dashboard() {
   const maxRevenue = Math.max(...trend.map((t) => t.revenue), 1)
 
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">
-          Good {greeting()}, {user?.name?.split(' ')[0]} 👋
-        </h1>
-        <p className="text-muted text-sm mt-1">Here's what's happening at {gym?.name} today.</p>
-      </div>
-
+    <>
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg mb-6">
           {error}
@@ -155,7 +199,7 @@ export default function Dashboard() {
           </Link>
         ))}
       </div>
-    </div>
+    </>
   )
 }
 

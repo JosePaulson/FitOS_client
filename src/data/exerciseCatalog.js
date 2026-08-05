@@ -5,13 +5,13 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 export const MUSCLE_GROUPS = [
-  { key: 'chest', label: 'Chest', icon: '🏋️' },
-  { key: 'back', label: 'Back', icon: '🎯' },
+  { key: 'chest',     label: 'Chest',     icon: '🏋️' },
+  { key: 'back',      label: 'Back',      icon: '🎯' },
   { key: 'shoulders', label: 'Shoulders', icon: '🔺' },
-  { key: 'biceps', label: 'Biceps', icon: '💪' },
-  { key: 'triceps', label: 'Triceps', icon: '🦾' },
-  { key: 'legs', label: 'Legs', icon: '🦵' },
-  { key: 'core', label: 'Core', icon: '🔥' },
+  { key: 'biceps',    label: 'Biceps',    icon: '💪' },
+  { key: 'triceps',   label: 'Triceps',   icon: '🦾' },
+  { key: 'legs',      label: 'Legs',      icon: '🦵' },
+  { key: 'core',      label: 'Core',      icon: '🔥' },
 ]
 
 export const EXERCISE_CATALOG = {

@@ -719,6 +719,22 @@ export default function PTSessions() {
 }
 
 /* ── Session form modal ──────────────────────────────────────────────────── */
+// Exercises were keyed by their array index in the list below, which is
+// exactly the wrong key for a reorderable list: on every drag, React sees
+// "same key at this position" and reuses that row's DOM/state for whatever
+// exercise now lands there instead of following the exercise that moved —
+// so the row under the pointer doesn't reliably track the dragged item.
+// Giving each exercise a stable id up front (independent of its position)
+// fixes that; ids are for React's reconciliation only and are stripped
+// before saving.
+let nextExerciseKey = 0
+function withKey(exercise) {
+  return exercise._key ? exercise : { ...exercise, _key: `ex-${Date.now()}-${nextExerciseKey++}` }
+}
+function stripKey({ _key, ...rest }) {
+  return rest
+}
+
 function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOptions, workoutOptions, isTrainer, userId, onClose, onSaved }) {
   // A member-booked session keeps the time they originally requested — staff
   // can still reschedule the date, but shouldn't silently change the time
@@ -737,7 +753,7 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
     status: session?.status || 'scheduled',
     bodyWeight: session?.bodyWeight || '',
     bodyFat: session?.bodyFat || '',
-    exercises: session?.exercises || [],
+    exercises: (session?.exercises || []).map(withKey),
     // Optional links into the shared catalogs — arrays of ids
     equipment: session?.equipment?.map((e) => e._id) || [],
     workouts: session?.workouts?.map((w) => w._id) || [],
@@ -770,7 +786,7 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
 
   const [showCopyModal, setShowCopyModal] = useState(false)
   function copyExercises(copied) {
-    setForm((v) => ({ ...v, exercises: [...v.exercises.filter((e) => e.name?.trim()), ...copied] }))
+    setForm((v) => ({ ...v, exercises: [...v.exercises.filter((e) => e.name?.trim()), ...copied.map(withKey)] }))
     setShowCopyModal(false)
   }
 
@@ -782,9 +798,28 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
   const exerciseRefs = useRef([])
   const [scrollToIndex, setScrollToIndex] = useState(null)
 
+  // Tracks whether the main "+ Add exercise" button (up near the top of the
+  // form) is currently scrolled out of view within the modal, so a second
+  // copy can be shown right below the last exercise row when it isn't.
+  const modalScrollRef = useRef(null)
+  const topAddBtnRef = useRef(null)
+  const [topAddBtnVisible, setTopAddBtnVisible] = useState(true)
+
+  useEffect(() => {
+    const root = modalScrollRef.current
+    const target = topAddBtnRef.current
+    if (!root || !target) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setTopAddBtnVisible(entry.isIntersecting),
+      { root, threshold: 0.01 },
+    )
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [])
+
   function addExercise() {
     setScrollToIndex(form.exercises.length) // index the new row will land at
-    setForm((v) => ({ ...v, exercises: [...v.exercises, { name: '', sets: '', reps: '', weight: '', notes: '', muscleGroup: '' }] }))
+    setForm((v) => ({ ...v, exercises: [...v.exercises, withKey({ name: '', sets: '', reps: '', weight: '', notes: '', muscleGroup: '' })] }))
   }
 
   useEffect(() => {
@@ -824,7 +859,7 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
         ...rest,
         date: combinedDate,
         durationMinutes: form.durationMinutes ? Number(form.durationMinutes) : 60,
-        exercises: form.exercises.filter((e) => e.name.trim()),
+        exercises: form.exercises.filter((e) => e.name.trim()).map(stripKey),
         bodyWeight: form.bodyWeight ? Number(form.bodyWeight) : undefined,
         bodyFat: form.bodyFat ? Number(form.bodyFat) : undefined,
       }
@@ -839,7 +874,7 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
 
   return (
     <Modal title={session ? 'Edit session' : 'Schedule PT session'} onClose={onClose} wide>
-      <div className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
+      <div ref={modalScrollRef} className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
         {error && <p className="px-3 py-2 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/20">{error}</p>}
 
         <div className="grid grid-cols-2 gap-3">
@@ -906,7 +941,7 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
 
         {/* Optional links to the shared equipment/workout catalogs — lets the
             member see exactly what this session used, with photos/video */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Link equipment (optional)">
             <Select
               isMulti
@@ -937,7 +972,7 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
                 className="text-xs transition-colors text-muted hover:text-cream disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-muted">
                 📋 Copy from previous
               </button>
-              <button type="button" onClick={addExercise}
+              <button type="button" ref={topAddBtnRef} onClick={addExercise}
                 className="text-xs transition-colors text-lime hover:text-lime-dark">+ Add exercise</button>
             </div>
           </div>
@@ -949,29 +984,29 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
           <div className="flex flex-col gap-2">
             {orderedExercises.map((ex, i) => (
               <div
-                key={i}
+                key={ex._key}
                 ref={(el) => { exerciseRefs.current[i] = el; setRowRef(i)(el) }}
-                className="flex items-stretch gap-1.5"
                 style={{ opacity: dragIndex === i ? 0.5 : 1 }}
               >
-                <span
-                  {...getHandleProps(i)}
-                  aria-label="Drag to reorder"
-                  className="flex items-center justify-center px-1 text-muted hover:text-cream shrink-0 select-none"
-                >
-                  ⠿
-                </span>
-                <div className="flex-1 min-w-0">
-                  <ExerciseRow
-                    exercise={ex}
-                    history={memberHistory}
-                    onChange={(field, val) => updateExercise(i, field, val)}
-                    onRemove={() => removeExercise(i)}
-                  />
-                </div>
+                <ExerciseRow
+                  exercise={ex}
+                  history={memberHistory}
+                  onChange={(field, val) => updateExercise(i, field, val)}
+                  onRemove={() => removeExercise(i)}
+                  dragHandleProps={getHandleProps(i)}
+                />
               </div>
             ))}
           </div>
+          {/* Second "Add exercise" affordance right after the list, so it's
+              always within reach without scrolling back up — only shown once
+              the original button up top has scrolled out of view. */}
+          {!topAddBtnVisible && (
+            <button type="button" onClick={addExercise}
+              className="w-full mt-2 py-2.5 text-xs font-semibold rounded-lg transition-colors text-lime border border-dashed border-lime/50 bg-lime/5 hover:bg-lime/10">
+              + Add exercise
+            </button>
+          )}
         </div>
 
         <div className="flex gap-3 pt-2 border-t border-white/[0.06]">

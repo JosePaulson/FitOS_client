@@ -27,6 +27,8 @@ import CookiePolicy   from './pages/legal/CookiePolicy'
 // Auth pages
 import Login    from './pages/Login'
 import Register from './pages/Register'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword  from './pages/ResetPassword'
 
 // Gym admin pages
 import Dashboard    from './pages/admin/Dashboard'
@@ -36,6 +38,7 @@ import Billing      from './pages/admin/Billing'
 import Attendance   from './pages/admin/Attendance'
 import Plans        from './pages/admin/Plans'
 import PTPlans      from './pages/admin/PTPlans'
+import Payroll      from './pages/admin/Payroll'
 import WorkoutPlans from './pages/admin/WorkoutPlans'
 import Staff        from './pages/admin/Staff'
 import Settings     from './pages/admin/Settings'
@@ -45,6 +48,8 @@ import WorkoutLibrary  from './pages/admin/WorkoutLibrary'
 import ExerciseCatalog from './pages/admin/ExerciseCatalog'
 import Complaints      from './pages/admin/Complaints'
 import StaffRatings    from './pages/admin/StaffRatings'
+import Leave           from './pages/admin/Leave'
+import Reimbursements  from './pages/admin/Reimbursements'
 
 // Super admin pages
 import SAOverview from './pages/superadmin/Overview'
@@ -71,6 +76,8 @@ export default function App() {
       {/* ── Auth routes ── */}
       <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+      <Route path="/forgot-password"       element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+      <Route path="/reset-password/:token" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
       {/* ── Gym admin dashboard ── */}
       <Route
@@ -84,6 +91,7 @@ export default function App() {
         <Route path="attendance"    element={<Attendance />} />
         <Route path="plans"         element={<Plans />} />
         <Route path="pt-plans"      element={<PTPlans />} />
+        <Route path="payroll"      element={<Payroll />} />
         <Route path="workout-plans" element={<WorkoutPlans />} />
         <Route path="staff"         element={
           <PrivateRoute roles={['owner', 'manager']}><Staff /></PrivateRoute>
@@ -105,6 +113,8 @@ export default function App() {
         <Route path="staff-ratings"    element={
           <PrivateRoute roles={['owner']}><StaffRatings /></PrivateRoute>
         } />
+        <Route path="leave"            element={<Leave />} />
+        <Route path="reimbursements"   element={<Reimbursements />} />
       </Route>
 
       {/* ── Super admin console ── */}

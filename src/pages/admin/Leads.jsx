@@ -319,7 +319,7 @@ function AddLeadModal({ onClose, onCreated }) {
           <Field label="Name *">
             <input type="text" value={form.name} onChange={set('name')} className="field-input" placeholder="Full name" autoFocus />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Phone *">
               <input type="tel" value={form.phone} onChange={set('phone')} className="field-input" placeholder="+91 98765 43210" />
             </Field>

@@ -254,10 +254,70 @@ function toDietFormData(data, file, removeFile) {
 
 /* ── Staff ────────────────────────────────────────────────────────────────── */
 export const staffApi = {
-  list: () => api.get('/staff'),
+  // Pass excludeOwner=true wherever the list is used for attendance/payroll/
+  // leave/reimbursements — the owner isn't "staff" for those purposes.
+  list: (params = {}) => api.get('/staff', { params }),
   create: (data) => api.post('/staff', data),
   update: (id, data) => api.patch(`/staff/${id}`, data),
   remove: (id) => api.delete(`/staff/${id}`),
+}
+
+/* ── Payroll & staff attendance ───────────────────────────────────────────── */
+export const staffPayrollApi = {
+  // Self-service — the signed-in staff member's own record
+  myCalendar: (month) => api.get('/staff-payroll/my/calendar', { params: { month } }),
+  mySummary:  (month) => api.get('/staff-payroll/my/summary', { params: { month } }),
+  submitMyAttendance: (data) => api.post('/staff-payroll/my/attendance', data),
+  // Batch submit — array of { date, status, notes } entries, e.g. every
+  // marked day from last month, submitted for approval in one request.
+  submitMyAttendanceBulk: (entries) => api.post('/staff-payroll/my/attendance/bulk', { entries }),
+
+  // Admin — viewing/managing another staff member (permission-gated server-side)
+  getSalary:    (staffId) => api.get(`/staff-payroll/staff/${staffId}/salary`),
+  setSalary:    (staffId, data) => api.put(`/staff-payroll/staff/${staffId}/salary`, data),
+  getSchedule:  (staffId) => api.get(`/staff-payroll/staff/${staffId}/schedule`),
+  setSchedule:  (staffId, data) => api.put(`/staff-payroll/staff/${staffId}/schedule`, data),
+  staffCalendar: (staffId, month) => api.get(`/staff-payroll/staff/${staffId}/calendar`, { params: { month } }),
+  staffSummary:  (staffId, month) => api.get(`/staff-payroll/staff/${staffId}/summary`, { params: { month } }),
+  setStaffAttendance: (staffId, data) => api.post(`/staff-payroll/staff/${staffId}/attendance`, data),
+  deleteAttendance: (id) => api.delete(`/staff-payroll/attendance/${id}`),
+
+  // Approvals
+  pending: () => api.get('/staff-payroll/pending'),
+  approve: (id, markPaid) => api.patch(`/staff-payroll/attendance/${id}/approve`, markPaid === undefined ? {} : { markPaid }),
+  reject:  (id, reason) => api.patch(`/staff-payroll/attendance/${id}/reject`, { reason }),
+  approveBulk: (ids) => api.patch('/staff-payroll/attendance/approve-bulk', { ids, decision: 'approve' }),
+  rejectBulk:  (ids, reason) => api.patch('/staff-payroll/attendance/approve-bulk', { ids, decision: 'reject', reason }),
+  approveMonth: (staffId, month) => api.patch(`/staff-payroll/staff/${staffId}/attendance/approve-month`, {}, { params: { month } }),
+
+  // Owner-only
+  analytics: (month, staffId) => api.get('/staff-payroll/analytics', { params: { month, staffId } }),
+  setPermissions: (managerId, perms) => api.put(`/staff-payroll/permissions/${managerId}`, perms),
+}
+
+/* ── Leave requests ───────────────────────────────────────────────────────── */
+export const leaveApi = {
+  myList: () => api.get('/leave/my'),
+  submit: (data) => api.post('/leave/my', data),
+  cancel: (id) => api.patch(`/leave/my/${id}/cancel`),
+
+  list: (params = {}) => api.get('/leave', { params }),
+  pending: () => api.get('/leave/pending'),
+  approve: (id, leaveType, reviewNote) => api.patch(`/leave/${id}/approve`, { leaveType, reviewNote }),
+  reject: (id, reason) => api.patch(`/leave/${id}/reject`, { reason }),
+}
+
+/* ── Reimbursement requests ───────────────────────────────────────────────── */
+export const reimbursementApi = {
+  myList: () => api.get('/reimbursements/my'),
+  submit: (data) => api.post('/reimbursements/my', data),
+  cancel: (id) => api.patch(`/reimbursements/my/${id}/cancel`),
+
+  list: (params = {}) => api.get('/reimbursements', { params }),
+  pending: () => api.get('/reimbursements/pending'),
+  approve: (id, reviewNote) => api.patch(`/reimbursements/${id}/approve`, { reviewNote }),
+  reject: (id, reason) => api.patch(`/reimbursements/${id}/reject`, { reason }),
+  markPaid: (id) => api.patch(`/reimbursements/${id}/mark-paid`),
 }
 
 /* ── Trainer availability (working hours + time-off) ────────────────────── */

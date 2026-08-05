@@ -15,4 +15,14 @@ export const authApi = {
 
   /** Get current user + gym info */
   me: () => api.get('/auth/me'),
+
+  /** Change password while signed in (requires current password) */
+  changePassword: (currentPassword, newPassword) =>
+    api.patch('/auth/change-password', { currentPassword, newPassword }),
+
+  /** Request a password-reset email */
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+
+  /** Complete a password reset using the token from the emailed link */
+  resetPassword: (token, password) => api.post(`/auth/reset-password/${token}`, { password }),
 }

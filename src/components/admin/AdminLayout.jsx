@@ -3,6 +3,8 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSuperAdmin } from '../../hooks/useSuperAdmin'
 import RateLimitWarning from './RateLimitWarning'
+import ChangePasswordModal from './ChangePasswordModal'
+import { APP_VERSION } from '../../version'
 
 const NAV = [
   { to: '/dashboard',                icon: '📊', label: 'Dashboard',      roles: null },
@@ -20,6 +22,9 @@ const NAV = [
   { to: '/dashboard/complaints',      icon: '📮', label: 'Complaints',     roles: ['owner', 'manager'] },
   { to: '/dashboard/staff-ratings',   icon: '⭐', label: 'Staff Ratings',  roles: ['owner'] },
   { to: '/dashboard/staff',          icon: '👤', label: 'Staff',          roles: ['owner', 'manager'] },
+  { to: '/dashboard/payroll',        icon: '💵', label: 'Payroll',        roles: null },
+  { to: '/dashboard/leave',          icon: '🌴', label: 'Leave',          roles: null },
+  { to: '/dashboard/reimbursements', icon: '🧾', label: 'Reimbursements', roles: null },
   { to: '/dashboard/settings',       icon: '⚙️', label: 'Settings',       roles: ['owner'] },
 ]
 
@@ -28,6 +33,7 @@ export default function AdminLayout() {
   const { isSuperAdmin }        = useSuperAdmin()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [showChangePassword, setShowChangePassword] = useState(false)
 
   async function handleLogout() {
     await logout()
@@ -135,11 +141,18 @@ export default function AdminLayout() {
             </div>
           </div>
           <button
+            onClick={() => setShowChangePassword(true)}
+            className="w-full text-xs text-muted hover:text-cream border border-white/[0.06] hover:border-white/20 py-2 rounded-lg transition-all mb-2"
+          >
+            Change password
+          </button>
+          <button
             onClick={handleLogout}
             className="w-full text-xs text-muted hover:text-cream border border-white/[0.06] hover:border-white/20 py-2 rounded-lg transition-all"
           >
             Sign out
           </button>
+          <p className="mt-2 text-[10px] text-center text-muted/60">Version {APP_VERSION}</p>
         </div>
       </aside>
 
@@ -172,6 +185,8 @@ export default function AdminLayout() {
 
       {/* Global rate-limit warning — fires on any 429 anywhere in the app */}
       <RateLimitWarning />
+
+      {showChangePassword && <ChangePasswordModal onClose={() => setShowChangePassword(false)} />}
     </div>
   )
 }

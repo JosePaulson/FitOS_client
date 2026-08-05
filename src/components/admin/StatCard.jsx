@@ -5,9 +5,9 @@ export default function StatCard({ icon, label, value, sub, accent = false, load
         ? 'bg-lime/5 border-lime/20'
         : 'bg-card border-white/[0.08]'
     }`}>
-      <div className="flex items-center justify-between">
-        <span className="text-muted text-xs font-medium uppercase tracking-wider">{label}</span>
-        <span className="text-xl">{icon}</span>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-muted text-xs font-medium uppercase tracking-wider min-w-0 flex-1">{label}</span>
+        <span className="text-xl shrink-0">{icon}</span>
       </div>
       {loading ? (
         <div className="h-8 w-24 bg-white/[0.06] rounded animate-pulse" />
