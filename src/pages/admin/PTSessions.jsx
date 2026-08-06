@@ -305,7 +305,7 @@
 // }
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { ptApi, memberApi, staffApi, equipmentApi, workoutLibraryApi, workoutLogApi } from '../../api/index'
+import { ptApi, memberApi, staffApi, equipmentApi, workoutLibraryApi, workoutLogApi, memberPTPlanApi } from '../../api/index'
 import Select from '../../components/ui/Select'
 import { useAuth } from '../../context/AuthContext'
 import ExerciseRow from '../../components/admin/ExerciseRow'
@@ -735,6 +735,39 @@ function stripKey({ _key, ...rest }) {
   return rest
 }
 
+// If a trainer/owner builds out a whole session — picks the member, adds a
+// handful of exercises — and then accidentally closes the tab or navigates
+// away before hitting Save, all of that is gone. Auto-saving an in-progress
+// *new* session to localStorage means it's recoverable next time "Schedule
+// PT session" is opened. Scoped to brand-new (unsaved) sessions only —
+// editing an existing session reads/writes the real record directly, so a
+// second local draft of it would just be a source of confusion.
+const PT_SESSION_DRAFT_KEY = 'fitos:pt-session-draft'
+
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(PT_SESSION_DRAFT_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+function saveDraft(form) {
+  try {
+    localStorage.setItem(PT_SESSION_DRAFT_KEY, JSON.stringify({ form, savedAt: Date.now() }))
+  } catch {
+    // Storage full/disabled (e.g. private browsing) — draft recovery just
+    // silently won't be available; not worth surfacing an error for.
+  }
+}
+function clearDraft() {
+  try { localStorage.removeItem(PT_SESSION_DRAFT_KEY) } catch { /* ignore */ }
+}
+/** A draft is only worth offering if the person actually started filling it in. */
+function draftHasContent(form) {
+  return !!(form.memberId || form.title?.trim() || form.exercises?.some((e) => e.name?.trim()))
+}
+
 function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOptions, workoutOptions, isTrainer, userId, onClose, onSaved }) {
   // A member-booked session keeps the time they originally requested — staff
   // can still reschedule the date, but shouldn't silently change the time
@@ -745,8 +778,7 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
   const [form, setForm] = useState({
     memberId: session?.memberId?._id || '',
     trainerId: session?.trainerId?._id || '',
-    date: fmtISO(session?.date) || todayLocalISO(),
-    time: session?.date ? fmtHHMM(session.date) : nowHHMM(),
+    when: session?.date ? `${fmtISO(session.date)}T${fmtHHMM(session.date)}` : `${todayLocalISO()}T${nowHHMM()}`,
     durationMinutes: session?.durationMinutes || 60,
     title: session?.title || '',
     notes: session?.notes || '',
@@ -793,6 +825,48 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
   const set = (f) => (e) => setForm((v) => ({ ...v, [f]: e.target.value }))
   const setVal = (f) => (v) => setForm((prev) => ({ ...prev, [f]: v }))
 
+  // ── Draft recovery (new sessions only) ──────────────────────────────────
+  // If there's a saved draft when this modal opens for a brand-new session,
+  // offer to restore it rather than silently overwriting or silently
+  // ignoring it.
+  const [draft, setDraft] = useState(() => (!session ? loadDraft() : null))
+  function restoreDraft() {
+    if (draft?.form) setForm({ ...draft.form, exercises: (draft.form.exercises || []).map(withKey) })
+    setDraft(null)
+  }
+  function discardDraft() {
+    clearDraft()
+    setDraft(null)
+  }
+  // Keep autosaving as they work, so closing the tab mid-edit doesn't lose
+  // it — but only once they've actually started (avoids overwriting a real
+  // recoverable draft with an untouched blank form the instant this modal
+  // opens, before the person has restored or discarded it).
+  useEffect(() => {
+    if (session || draft) return
+    if (!draftHasContent(form)) return
+    saveDraft(form)
+  }, [session, draft, form])
+
+  // ── Auto-fill trainer from the member's active PT plan ──────────────────
+  // If the member has an active PT plan with a trainer assigned, default
+  // the session to that trainer — staff can still change it. Never
+  // overwrites a trainer that's already selected (e.g. when editing, or if
+  // they picked one manually before this resolves).
+  useEffect(() => {
+    if (isTrainer || !form.memberId) return
+    let cancelled = false
+    memberPTPlanApi.list({ memberId: form.memberId, status: 'active' })
+      .then(({ data }) => {
+        if (cancelled) return
+        const withTrainer = data.find((a) => a.trainerId?._id)
+        if (withTrainer) setForm((v) => (v.trainerId ? v : { ...v, trainerId: withTrainer.trainerId._id }))
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.memberId, isTrainer])
+
   // Refs to each exercise row so a newly-added one can be scrolled into
   // view — cleared and rebuilt every render, indexed to match form.exercises.
   const exerciseRefs = useRef([])
@@ -822,13 +896,25 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
     setForm((v) => ({ ...v, exercises: [...v.exercises, withKey({ name: '', sets: '', reps: '', weight: '', notes: '', muscleGroup: '' })] }))
   }
 
+  const { list: orderedExercises, dragIndex, getHandleProps, setRowRef } = useDragReorder(
+    form.exercises,
+    (reordered) => setForm((v) => ({ ...v, exercises: reordered }))
+  )
+
+  // Scrolls the newly-added row into view. Keyed off orderedExercises.length
+  // (what's actually rendered) rather than form.exercises.length: useDragReorder
+  // keeps its own internal copy of the list and only resyncs it from
+  // form.exercises one render *after* form.exercises changes, so a new row
+  // doesn't actually exist in the DOM yet on the render where
+  // form.exercises.length first ticks up — this effect would fire a render
+  // too early and find nothing in exerciseRefs to scroll to.
   useEffect(() => {
     if (scrollToIndex == null) return
     const el = exerciseRefs.current[scrollToIndex]
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
     setScrollToIndex(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scrollToIndex, form.exercises.length])
+  }, [scrollToIndex, orderedExercises.length])
 
   function updateExercise(i, field, val) {
     setForm((v) => {
@@ -841,20 +927,17 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
     setForm((v) => ({ ...v, exercises: v.exercises.filter((_, idx) => idx !== i) }))
   }
 
-  const { list: orderedExercises, dragIndex, getHandleProps, setRowRef } = useDragReorder(
-    form.exercises,
-    (reordered) => setForm((v) => ({ ...v, exercises: reordered }))
-  )
-
   async function save() {
     setError(''); setSaving(true)
     try {
       // Member-booked sessions keep their original time-of-day even if the
-      // date is changed; everything else combines the date + time fields.
-      const time = isMemberBooked ? fmtHHMM(session.date) : (form.time || '00:00')
-      const combinedDate = new Date(`${form.date}T${time}:00`).toISOString()
+      // date is changed; everything else uses the combined date+time field
+      // as-is.
+      const [whenDate] = form.when.split('T')
+      const time = isMemberBooked ? fmtHHMM(session.date) : (form.when.split('T')[1] || '00:00')
+      const combinedDate = new Date(`${whenDate}T${time}:00`).toISOString()
 
-      const { time: _time, ...rest } = form
+      const { when: _when, ...rest } = form
       const payload = {
         ...rest,
         date: combinedDate,
@@ -866,6 +949,7 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
       if (isTrainer) payload.trainerId = userId
       if (session) await ptApi.update(session._id, payload)
       else await ptApi.create(payload)
+      if (!session) clearDraft()
       onSaved()
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save')
@@ -876,6 +960,18 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
     <Modal title={session ? 'Edit session' : 'Schedule PT session'} onClose={onClose} wide>
       <div ref={modalScrollRef} className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
         {error && <p className="px-3 py-2 text-sm text-red-400 border rounded-lg bg-red-500/10 border-red-500/20">{error}</p>}
+
+        {draft && (
+          <div className="flex items-center justify-between gap-3 px-3 py-2.5 text-xs border rounded-lg bg-lime/5 border-lime/20">
+            <span className="text-cream">
+              📝 You have an unsaved session draft from {new Date(draft.savedAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}.
+            </span>
+            <div className="flex gap-2 shrink-0">
+              <button type="button" onClick={restoreDraft} className="font-semibold text-lime hover:text-lime-dark">Restore</button>
+              <button type="button" onClick={discardDraft} className="text-muted hover:text-cream">Discard</button>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Member *">
@@ -888,19 +984,32 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
           )}
         </div>
 
-        <div className="grid grid-cols-4 gap-3">
-          <Field label="Date *">
-            <input type="date" value={form.date} onChange={set('date')} className="field-input" />
+        {isMemberBooked ? (
+          <Field label="Date & time (booked by member)">
+            <input type="datetime-local" value={form.when} disabled className="field-input disabled:opacity-60 disabled:cursor-not-allowed" />
           </Field>
-          <Field label={isMemberBooked ? 'Time (booked by member)' : 'Time'}>
+        ) : (
+          <Field label="Date & time *">
+            <input type="datetime-local" value={form.when} onChange={set('when')} className="field-input" />
+          </Field>
+        )}
+        {isMemberBooked && (
+          <Field label="Reschedule date (keeps their booked time)">
             <input
-              type="time"
-              value={isMemberBooked ? fmtHHMM(session.date) : form.time}
-              onChange={set('time')}
-              disabled={isMemberBooked}
-              className="field-input disabled:opacity-60 disabled:cursor-not-allowed"
+              type="date"
+              value={form.when.split('T')[0]}
+              onChange={(e) => setForm((v) => ({ ...v, when: `${e.target.value}T${v.when.split('T')[1]}` }))}
+              className="field-input"
             />
           </Field>
+        )}
+        {isMemberBooked && (
+          <p className="text-[11px] text-muted -mt-2">
+            🔒 This session was booked by the member for this time — reschedule the date if needed, but the time they requested is kept.
+          </p>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
           <Field label="Session duration (min)">
             <input type="number" min="5" step="5" value={form.durationMinutes} onChange={set('durationMinutes')} className="field-input" placeholder="60" />
           </Field>
@@ -913,11 +1022,6 @@ function SessionFormModal({ session, memberOptions, trainerOptions, equipmentOpt
             ]} />
           </Field>
         </div>
-        {isMemberBooked && (
-          <p className="text-[11px] text-muted -mt-2">
-            🔒 This session was booked by the member for this time — reschedule the date if needed, but the time they requested is kept.
-          </p>
-        )}
 
         <Field label="Session title / focus">
           <input type="text" value={form.title} onChange={set('title')} className="field-input" placeholder="e.g. Upper body strength" />
