@@ -431,6 +431,18 @@ export const staffRatingApi = {
   list: (params = {}) => api.get('/staff-ratings', { params }),
 }
 
+/* ── Weekly PT timetable (admin — trainer builds/manages, owner/manager oversee) ── */
+export const timetableApi = {
+  list: (params = {}) => api.get('/timetable', { params }),
+  generate: (trainerId) => api.post(`/timetable/${trainerId}/generate`),
+  addSlots: (trainerId, data) => api.post(`/timetable/${trainerId}/slots`, data),
+  assign: (id, data) => api.patch(`/timetable/${id}/assign`, data),
+  empty: (id) => api.patch(`/timetable/${id}/empty`),
+  approveRequest: (id) => api.post(`/timetable/${id}/approve-request`),
+  declineRequest: (id, reason) => api.post(`/timetable/${id}/decline-request`, { reason }),
+  remove: (id) => api.delete(`/timetable/${id}`),
+}
+
 /* ── Exercise catalog (admin — categories + exercises) ────────────────────── */
 export const exerciseCatalogApi = {
   categories: {

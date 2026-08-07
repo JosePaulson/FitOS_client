@@ -43,6 +43,7 @@ import WorkoutPlans from './pages/admin/WorkoutPlans'
 import Staff        from './pages/admin/Staff'
 import Settings     from './pages/admin/Settings'
 import PTSessions   from './pages/admin/PTSessions'
+import Timetable    from './pages/admin/Timetable'
 import Equipment       from './pages/admin/Equipment'
 import WorkoutLibrary  from './pages/admin/WorkoutLibrary'
 import ExerciseCatalog from './pages/admin/ExerciseCatalog'
@@ -101,6 +102,9 @@ export default function App() {
         } />
         <Route path="pt-sessions"    element={
           <PrivateRoute roles={['owner','manager','trainer']}><PTSessions /></PrivateRoute>
+        } />
+        <Route path="timetable"      element={
+          <PrivateRoute roles={['owner','manager','trainer']}><Timetable /></PrivateRoute>
         } />
         <Route path="equipment"        element={<Equipment />} />
         <Route path="workout-library"  element={<WorkoutLibrary />} />
